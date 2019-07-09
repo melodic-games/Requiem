@@ -28,7 +28,7 @@ public class SymphonicUserControl : MonoBehaviour {
         if (Input.GetButtonDown("Jump"))
         symphonicBehaviour.jump = true;
 
-        if (Input.GetButton("Jump/Glide"))
+        if (Input.GetButton("Jump"))
             symphonicBehaviour.jump = true;
 
         symphonicBehaviour.thrust = Input.GetAxis("Thrust");

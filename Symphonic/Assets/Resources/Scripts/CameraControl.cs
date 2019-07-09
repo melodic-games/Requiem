@@ -59,7 +59,7 @@ public class CameraControl : MonoBehaviour {
 
     void LateUpdate()
     {            
-        Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.lockState = CursorLockMode.Locked;
 
         shakeMagnatude = Mathf.Lerp(shakeMagnatude, 0, Time.deltaTime * 8);
 
