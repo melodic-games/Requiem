@@ -1,0 +1,159 @@
+fileFormatVersion: 2
+guid: dee1fa80018ff3e49ac51c77af6a22e7
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Plane_006
+    100004: Plane_007
+    100006: Cage
+    100008: Wings
+    100010: Armature
+    100012: Base
+    100014: Core
+    100016: LeftArm
+    100018: LeftCagePivot
+    100020: LeftDisplace
+    100022: LeftWing1
+    100024: LeftWing2
+    100026: LeftWingPivot
+    100028: RightArm
+    100030: RightCagePivot
+    100032: RightDisplace
+    100034: RightWing1
+    100036: RightWing2
+    100038: RightWingPivot
+    400000: //RootNode
+    400002: Plane_006
+    400004: Plane_007
+    400006: Cage
+    400008: Wings
+    400010: Armature
+    400012: Base
+    400014: Core
+    400016: LeftArm
+    400018: LeftCagePivot
+    400020: LeftDisplace
+    400022: LeftWing1
+    400024: LeftWing2
+    400026: LeftWingPivot
+    400028: RightArm
+    400030: RightCagePivot
+    400032: RightDisplace
+    400034: RightWing1
+    400036: RightWing2
+    400038: RightWingPivot
+    2100000: Emit
+    2100002: HelmetFace
+    2100004: Plastic
+    2100006: Metal2
+    2100008: MelodyMaterial
+    2100010: WhiteMetal
+    2100012: Black
+    2100014: White
+    2300000: //RootNode
+    2300002: Plane_006
+    2300004: Plane_007
+    2300006: Cage
+    2300008: Wings
+    3300000: //RootNode
+    3300002: Plane_006
+    3300004: Plane_007
+    3300006: Cage
+    3300008: Wings
+    4300000: Icosphere_002
+    4300002: Plane_006
+    4300004: Plane_007
+    4300006: Core
+    4300008: Cage
+    4300010: Wings
+    7400000: Default Take
+    7400002: PoseLib
+    9500000: //RootNode
+    13700000: Cage
+    13700002: Core
+    13700004: Wings
+    2186277476908879412: ImportLogs
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 3
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
