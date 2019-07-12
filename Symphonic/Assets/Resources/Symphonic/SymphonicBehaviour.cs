@@ -46,6 +46,7 @@ public class SymphonicBehaviour : MonoBehaviour {
     public Animator animator;
     public Rigidbody rb;//Rigidbody
     public CapsuleCollider capsuleCollider;
+    public DynamicBone[] dynamicBones;
     public GameObject leftHand;
     public GameObject rightHand;
     public Object trailPrefab;
@@ -59,7 +60,7 @@ public class SymphonicBehaviour : MonoBehaviour {
     public Object landParticleExplosion;
     public SkinnedMeshRenderer bodyRenderer;
     public Material[] materials;
-    private DynamicBone[] dynamicBones = new DynamicBone[3];
+    //private DynamicBone[] dynamicBones = new DynamicBone[3];
     private Vector4[] hairValues = new Vector4[] 
     {
         new Vector4(0.3f, .15f, 0, 1),
@@ -75,7 +76,7 @@ public class SymphonicBehaviour : MonoBehaviour {
     };
 
     public float emission = 1f;
-    Vector4 color = Color.white;
+    public Vector4 emissionColor = Color.white;
 
     //Gravity     
     public GravityManager gM;
@@ -123,14 +124,14 @@ public class SymphonicBehaviour : MonoBehaviour {
 
        // hairLeft = GameObject.Find("LeftHair1");
        // hairRight = GameObject.Find("RightHair1");
-       // hairMount = GameObject.Find("HairMount");
+        hairMount = GameObject.Find("HairMount");
 
         rb = GetComponent<Rigidbody>();    
         rb.useGravity = false;
         rb.angularDrag = 5;
         rb.drag = 0.1f;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-        
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
 
         boostParticleExplosion = Resources.Load<Object>("Prefabs/Explosion1");
         landParticleExplosion = Resources.Load<Object>("Symphonic/LandExplosion");
@@ -141,33 +142,32 @@ public class SymphonicBehaviour : MonoBehaviour {
 
         materials = new Material[]
         {
-            Resources.Load<Material>("Symphonic/MatSym"),
+            Resources.Load<Material>("Symphonic/Mat_Symphonic"),
             Resources.Load<Material>("Symphonic/Mat_Hair"),
             Resources.Load<Material>("Symphonic/Mat_Emission")
         };
 
         bodyRenderer = GetComponentInChildren<SkinnedMeshRenderer>();
-        //bodyRenderer.materials = materials;
+        bodyRenderer.materials = materials;
 
-        capsuleCollider = GetComponent<CapsuleCollider>();
-        capsuleCollider.center = new Vector3(0, -.2f, 0);//Vector3.zero for sphere mode
+        capsuleCollider = GetComponent<CapsuleCollider>();        
         capsuleCollider.radius = .25f;//.5 for sphere mode
         capsuleCollider.height = playerHeight;//0 for sphere mode
         capsuleCollider.direction = 1;//Y-Axis               
         
         for (int i = 0; i < 3; i++)
-        {
-            //dynamicBones[i] = gameObject.AddComponent<DynamicBone>() as DynamicBone;
-           // int hairIndex = 0; if (i == 2) hairIndex = 1;
-            //dynamicBones[i].m_Damping = hairValues[hairIndex].x;
-           // dynamicBones[i].m_Elasticity = hairValues[hairIndex].y;
-           // dynamicBones[i].m_Stiffness = hairValues[hairIndex].z;
-          //  dynamicBones[i].m_Inert = hairValues[hairIndex].w;
+       {
+            dynamicBones[i] = gameObject.AddComponent<DynamicBone>() as DynamicBone;
+            int hairIndex = 0; if (i == 2) hairIndex = 1;
+            dynamicBones[i].m_Damping = hairValues[hairIndex].x;
+            dynamicBones[i].m_Elasticity = hairValues[hairIndex].y;
+            dynamicBones[i].m_Stiffness = hairValues[hairIndex].z;
+            dynamicBones[i].m_Inert = hairValues[hairIndex].w;
         }
 
-      //  dynamicBones[0].m_Root = hairLeft.transform;
-       // dynamicBones[1].m_Root = hairRight.transform;
-      //  dynamicBones[2].m_Root = hairMount.transform;
+        dynamicBones[0].m_Root = hairLeft.transform;
+        dynamicBones[1].m_Root = hairRight.transform;
+        dynamicBones[2].m_Root = hairMount.transform;
 
         gM = FindObjectOfType<GravityManager>();
     }
@@ -180,7 +180,7 @@ public class SymphonicBehaviour : MonoBehaviour {
         rb.maxAngularVelocity = 20;
     }
 
-    void ChangeSignature()
+    public void ChangeSignature()
     {             
         switch (dPad)
         {
@@ -203,16 +203,17 @@ public class SymphonicBehaviour : MonoBehaviour {
     {                
         switch (currentSignature)
         {                               
-            default:                            
-                break;
+            default:
+                goto case Signature.Pure;
             case Signature.Pure: //Default normal ground movement and flight
                
-                if (!flying)
+              //  if (!flying)
+                if (usingFeet)
                 {
 
                     Vector3 moveDirection;
                                                                         
-                    if (usingFeet)//ground movement
+                    //if (usingFeet)//ground movement
                     {
                         //check to make sure we have not left the ground 
                         {
@@ -273,8 +274,9 @@ public class SymphonicBehaviour : MonoBehaviour {
                             thrustAsButtion = false;
                             rb.AddForce(moveDirection * 155, ForceMode.VelocityChange);
                         }
-                    }
+                    }  /*
                     else //airborn movment, but not flight
+                  
                     {
                         //No ground raycast as we are in air, use gravity for up direction.
                         {
@@ -334,6 +336,7 @@ public class SymphonicBehaviour : MonoBehaviour {
                         }
                         
                     }
+                    */
 
                     //Forward Acceleration in air, and on ground
                     {
@@ -342,8 +345,8 @@ public class SymphonicBehaviour : MonoBehaviour {
                     }
 
                 }
-                                                                                       
-                if (flying)
+                else                                                                       
+               // if (flying)
                 {
                     //reset these values for flight
                     {
@@ -476,6 +479,13 @@ public class SymphonicBehaviour : MonoBehaviour {
                         netForce += flightForward * Mathf.Max(0, thrust) * moveAcceleration * (1 + rollSpinUp);
                     }
 
+                    //Hover and gliding
+                    if (jump)
+                    {
+                        jump = false;                                     
+                        netForce += -gravity;
+                    }
+
                     //Boost
                     {
                         //charge boost value
@@ -541,6 +551,16 @@ public class SymphonicBehaviour : MonoBehaviour {
               
                 break;
         }              
+    }
+
+    private void Update()
+    {
+        foreach(DynamicBone bone in dynamicBones)
+        {
+            bone.m_Stiffness = Mathf.InverseLerp(3, 20, Mathf.Abs(localAngularVelocity.y));
+            bone.UpdateParameters();
+        }
+
     }
 
     void FixedUpdate()
@@ -648,25 +668,18 @@ public class SymphonicBehaviour : MonoBehaviour {
             emission = Mathf.Clamp(emission, 0, 1);
 
 
-            color = Vector4.Lerp(color, signatureColors[(int)currentSignature],Time.deltaTime * 2);
+            emissionColor = Vector4.Lerp(emissionColor, signatureColors[(int)currentSignature],Time.deltaTime * 2);
 
             if (materials != null)
             {
                 if(materials[0] != null)
-                    materials[0].SetColor("_EmissiveColor", color * emission);
+                    materials[0].SetColor("_EmissiveColor", emissionColor * emission);
                 if (materials[1] != null)
-                    materials[1].SetColor("_EmissiveColor", color * 1);
+                    materials[1].SetColor("_EmissiveColor", emissionColor * 1);
                 if (materials[2] != null)
-                    materials[2].SetColor("_EmissiveColor", color * 1);
+                    materials[2].SetColor("_EmissiveColor", emissionColor * 1);
             }
         }
-
-
-
-        if (Input.GetAxis("DPAD – Vertical") == 1) { dPad = 0; ChangeSignature(); color = new Vector4(5, 5, 5, 1); }
-        if (Input.GetAxis("DPAD – Horizontal") == 1) { dPad = 1; ChangeSignature(); color = new Vector4(5, 5, 5, 1); }
-        if (Input.GetAxis("DPAD – Vertical") == -1) { dPad = 2; ChangeSignature(); color = new Vector4(5, 5, 5, 1); }
-        if (Input.GetAxis("DPAD – Horizontal") == -1) { dPad = 3; ChangeSignature(); color = new Vector4(5, 5, 5, 1); }
 
         //adjust where the player should appear on screen.  
         {
@@ -685,10 +698,36 @@ public class SymphonicBehaviour : MonoBehaviour {
                 cameraControl.zoomDistanceMax = 10;
             }
 
-
             cameraControl.localOffset = Vector3.Slerp(cameraControl.localOffset, camLocalOffsetTarget, Time.deltaTime * 2);
         }
 
+    }
+
+    //A callback for calculating IK
+    void OnAnimatorIK()
+    {
+        if (animator && cameraControl)
+        {
+
+            float t = Mathf.InverseLerp(20, 10, localAngularVelocity.magnitude);
+          
+            if (cameraControl.targetingReticle != null)
+            {
+                animator.SetLookAtWeight(t);
+                animator.SetLookAtPosition(cameraControl.targetingReticle.position);
+            }
+
+            // Set the right hand target position and rotation, if one has been assigned
+            //  if (rightHandObj != null)
+            {
+                //   animator.SetIKPositionWeight(AvatarIKGoal.RightHand, 1);
+                //  animator.SetIKRotationWeight(AvatarIKGoal.RightHand, 1);
+                //  animator.SetIKPosition(AvatarIKGoal.RightHand, rightHandObj.position);
+                //  animator.SetIKRotation(AvatarIKGoal.RightHand, rightHandObj.rotation);
+            }
+
+
+        }
     }
 
     void AudioEffects()

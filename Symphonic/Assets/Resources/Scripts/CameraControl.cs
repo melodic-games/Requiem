@@ -22,6 +22,7 @@ public class CameraControl : MonoBehaviour {
     public float mouseSensitivity = 100.0f;
     public float joystickSensitivity = 100.0f;          
     public Vector3 localOffset = Vector3.zero;
+    public bool overrideLocalOffset = false;
     public float lerpSpeed = 20;// scalar used to tweak the tightness on the camera offset   
     
     public Vector3 upVector = Vector3.up;   
@@ -69,8 +70,8 @@ public class CameraControl : MonoBehaviour {
             Vector2 mouseMovement = Vector2.zero;
             Vector2 joystickMovement = Vector2.zero;     
 
-            mouseMovement.x = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-            mouseMovement.y = -Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;  
+           // mouseMovement.x = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+           // mouseMovement.y = -Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;  
                 
             joystickMovement.x = Input.GetAxis("Horizontal2") * joystickSensitivity * Time.deltaTime;
             joystickMovement.y = Input.GetAxis("Vertical2") * joystickSensitivity * Time.deltaTime;
@@ -93,6 +94,10 @@ public class CameraControl : MonoBehaviour {
             float scale = 1 - Mathf.Abs(Vector3.Dot(targetRotation * Vector3.forward, upVector));
             targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation(targetRotation * Vector3.forward, upVector), Time.deltaTime * scale);
         }
+
+        if (overrideLocalOffset)
+            localOffset = Vector3.zero;
+
 
         //Lerp Towards Target
         if (followingTarget)       

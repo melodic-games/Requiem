@@ -25,15 +25,22 @@ public class SymphonicUserControl : MonoBehaviour {
         else
             focus = Input.GetAxis("Focus");
 
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetAxis("DPAD – Vertical") == 1) { symphonicBehaviour.dPad = 0; symphonicBehaviour.ChangeSignature();  }
+        if (Input.GetAxis("DPAD – Horizontal") == 1) { symphonicBehaviour.dPad = 1; symphonicBehaviour.ChangeSignature(); }
+        if (Input.GetAxis("DPAD – Vertical") == -1) { symphonicBehaviour.dPad = 2; symphonicBehaviour.ChangeSignature(); }
+        if (Input.GetAxis("DPAD – Horizontal") == -1) { symphonicBehaviour.dPad = 3; symphonicBehaviour.ChangeSignature(); }
+
+        if(symphonicBehaviour.usingFeet)
+        if (Input.GetButtonDown("Jump/Glide"))
         symphonicBehaviour.jump = true;
 
-        if (Input.GetButton("Jump"))
+        if (!symphonicBehaviour.usingFeet)
+        if (Input.GetButton("Jump/Glide"))
             symphonicBehaviour.jump = true;
 
         symphonicBehaviour.thrust = Input.GetAxis("Thrust");
 
-        if (Input.GetAxisRaw("Thrust") != 0)
+        if (Input.GetAxisRaw("Thrust") == 1)
         {
             if (thrustButton_inUse == false)
             {

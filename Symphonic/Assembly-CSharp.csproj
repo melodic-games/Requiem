@@ -87,7 +87,6 @@
     <Compile Include="Assets\Resources\Scripts\LookatTarget.cs" />
     <Compile Include="Assets\Resources\Scripts\Metronome\Metronome.cs" />
     <Compile Include="Assets\Resources\Scripts\MouseCursor.cs" />
-    <Compile Include="Assets\Resources\Scripts\OperatorControl.cs" />
     <Compile Include="Assets\Resources\Scripts\PistionMove.cs" />
     <Compile Include="Assets\Resources\Scripts\PivotBasedCameraRig.cs" />
     <Compile Include="Assets\Resources\Scripts\PointerControl.cs" />
@@ -131,6 +130,7 @@
     <Compile Include="Assets\Resources\Scripts\WindTrailGenerator.cs" />
     <Compile Include="Assets\Resources\Scripts\WindTrailLogic.cs" />
     <Compile Include="Assets\Resources\Start\PositionController.cs" />
+    <Compile Include="Assets\Resources\Symphonic\OperatorControl.cs" />
     <Compile Include="Assets\Resources\Symphonic\SignatureBase.cs" />
     <Compile Include="Assets\Resources\Symphonic\SymphonicAIControl.cs" />
     <Compile Include="Assets\Resources\Symphonic\SymphonicBehaviour.cs" />
