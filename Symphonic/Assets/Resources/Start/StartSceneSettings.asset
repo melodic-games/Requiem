@@ -145,7 +145,7 @@ MonoBehaviour:
     m_OverrideState: 0
     m_Value: 0
   hdriSky:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: {fileID: 8900000, guid: a3bf2b406bc03da48b1143a28afb6a3b, type: 3}
 --- !u!114 &-86121836167746543
 MonoBehaviour:
@@ -194,10 +194,10 @@ MonoBehaviour:
     min: 0
   fogDistance:
     m_OverrideState: 1
-    m_Value: 10000
+    m_Value: 2000
     min: 0
   fogBaseHeight:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0
   fogHeightAttenuation:
     m_OverrideState: 1
