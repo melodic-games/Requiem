@@ -685,7 +685,7 @@ public class SymphonicBehaviour : MonoBehaviour {
         {
             Vector3 headHeight = new Vector3(0, 1f, 0);
 
-            if (flying)
+            if (!usingFeet)
             {
                 camLocalOffsetTarget = Vector3.zero;
                 cameraControl.zoomDistanceMin = 2;
