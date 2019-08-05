@@ -139,9 +139,13 @@
     <Compile Include="Assets\Resources\UI\AreaTriggerControl.cs" />
     <Compile Include="Assets\Resources\UI\BlackBorder.cs" />
     <Compile Include="Assets\TestRotationFix.cs" />
+    <None Include="Assets\OLD\VoidProject\VoidPlatform\RigLights.shader" />
     <None Include="Assets\Resources\Models\Transporter\Shaders\NewHologramScanlines.shader" />
     <None Include="Assets\Muscle Animation Editor\Readme.txt" />
+    <None Include="Assets\OLD\VoidProject\VoidPlatform\Blackhole_GradientSmoothingSPS.shader" />
+    <None Include="Assets\OLD\VoidProject\VoidBelts\Gem.shader" />
     <None Include="Assets\Resources\Models\Transporter\Shaders\NewPBRAnimatedEmissive.shader" />
+    <None Include="Assets\OLD\VoidProject\ChromaticAberrationShader.shader" />
     <None Include="Assets\Resources\DynamicBone\ReadMe.txt" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/amber/OneDrive/Documents/GitHub/Symphonic/Symphonic/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>

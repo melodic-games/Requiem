@@ -12,7 +12,7 @@ public class BlackBorder : MonoBehaviour
     private void Update()
     {
         scale = Mathf.Lerp(scale, Input.GetAxis("Focus"), Time.deltaTime * 5);
-        height = Screen.height / 7;
+        height = Screen.height / 12;
     }
 
     private void OnGUI()

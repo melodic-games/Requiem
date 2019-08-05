@@ -30,13 +30,13 @@ public class SymphonicUserControl : MonoBehaviour {
         if (Input.GetAxis("DPAD – Vertical") == -1) { symphonicBehaviour.dPad = 2; symphonicBehaviour.ChangeSignature(); }
         if (Input.GetAxis("DPAD – Horizontal") == -1) { symphonicBehaviour.dPad = 3; symphonicBehaviour.ChangeSignature(); }
 
-        if(symphonicBehaviour.usingFeet)
+        if(symphonicBehaviour.grounded)
         if (Input.GetButtonDown("Jump/Glide"))
         symphonicBehaviour.jump = true;
 
-        if (!symphonicBehaviour.usingFeet)
-        if (Input.GetButton("Jump/Glide"))
-            symphonicBehaviour.jump = true;
+       // if (!symphonicBehaviour.grounded)
+      //  if (Input.GetButton("Jump/Glide"))
+      //      symphonicBehaviour.jump = true;
 
         symphonicBehaviour.thrust = Input.GetAxis("Thrust");
 
@@ -56,8 +56,9 @@ public class SymphonicUserControl : MonoBehaviour {
 
         symphonicBehaviour.focus = focus;
         symphonicBehaviour.rollAxisInput = Input.GetAxis("Horizontal");
-        symphonicBehaviour.pitchAxisInput = Input.GetAxis("Vertical");       
-        
+        symphonicBehaviour.pitchAxisInput = Input.GetAxis("Vertical");
+        //symphonicBehaviour.yawAxisInput = Input.GetAxis("Bumbers");
+
     }
 
     private void FindNewTarget()

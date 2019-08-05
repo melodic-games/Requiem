@@ -2,11 +2,6 @@
 using System.Collections;
 
 
-public class SignatureClass
-{
-    public string name = "";
-}
-
 //Signature Enumeration Data
 public enum Signature
 {
@@ -20,10 +15,11 @@ public enum Signature
 [RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(Animator))]
 
-public class SymphonicBehaviour : MonoBehaviour {   
+public class SymphonicBehaviour : MonoBehaviour {
 
     //Character   
     [Header("Character Info")]
+    public Transform myOperator = null;
     public float moveAcceleration = 20;//Base force value used to accelerate the character    
     public float angularAccelerationBase = 10;//Base force value used to rotate the character   
     private float liftScale = 1;
@@ -31,12 +27,13 @@ public class SymphonicBehaviour : MonoBehaviour {
     private float rollSpinUp = 0;
     private float pitchSpinup = 0;
     private float boostCharge = 0;
-    private float currentMedium = 0;
+    public float previousMediumDensity = 0;
+    public float currentMediumDensity = 0;
     public float playerHeight = 2;
     public float colliderRadiusMin = .25f;//Used for standing 
     public float colliderRadiusMax = .4f;//Used for flight Curl 
-    public bool usingFeet = false;
-    public bool flying = false;
+    public bool grounded = false;
+    public bool canFly = false;
     public float jumpPower = 10;
     private bool insideVolume = false;
     private Vector3 camLocalOffsetTarget = Vector3.zero;
@@ -207,146 +204,81 @@ public class SymphonicBehaviour : MonoBehaviour {
                 goto case Signature.Pure;
             case Signature.Pure: //Default normal ground movement and flight
                
-              //  if (!flying)
-                if (usingFeet)
+                if (grounded)
                 {
 
                     Vector3 moveDirection;
-                                                                        
-                    //if (usingFeet)//ground movement
+                                                                                                          
+                    //check to make sure we have not left the ground 
                     {
-                        //check to make sure we have not left the ground 
-                        {
-                            RaycastHit hit;
+                        RaycastHit hit;
                                                 
-                            if (!Physics.Raycast(transform.position, gravity, out hit, 1.8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
-                            {
-                                usingFeet = false;
-                            }
-                            else
-                            {
-                                groundNormal = hit.normal;
-                            }
-                        }
-
-                        //Reset Movement Values for when on ground          
+                        if (!Physics.Raycast(transform.position, gravity, out hit, 1.8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
                         {
-                            rb.angularDrag = 1000;
-                            moveAcceleration = 20;
-                            rb.drag = 10f;
+                            grounded = false;
                         }
-                       
-                        //Calulate the move direction, based on camera direction and input
+                        else
                         {
-                            moveDirection = Vector3.ClampMagnitude(
-                            Vector3.Cross(Camera.main.transform.right, groundNormal) * pitchAxisInput - Vector3.Cross(Camera.main.transform.forward, groundNormal) * rollAxisInput, 1);       
+                            groundNormal = hit.normal;
                         }
-
-                        //Set rotation on ground.
-                        {
-                            transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity.normalized), -gravity.normalized);
-                            rb.angularVelocity = Vector3.zero;
-                        }
-
-                        //Adjust Capsule Collider
-                        {                          
-                            capsuleCollider.radius = colliderRadiusMin;
-                            capsuleCollider.height = playerHeight;
-                        }
-
-                        //Character faces the move direction    
-                        {
-                            if (moveDirection.magnitude > .1f)
-                                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, -gravity.normalized), Time.deltaTime * 10);
-                        }
-
-                        //Jumping requires instant velocity change. Cant use netForce field.
-                        if (jump)
-                        {
-                            jump = false;
-                            usingFeet = false;
-                            rb.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
-                        }
-
-                        //Dash abblity
-                        if (thrustAsButtion)
-                        {
-                            thrustAsButtion = false;
-                            rb.AddForce(moveDirection * 155, ForceMode.VelocityChange);
-                        }
-                    }  /*
-                    else //airborn movment, but not flight
-                  
-                    {
-                        //No ground raycast as we are in air, use gravity for up direction.
-                        {
-                            groundNormal = -gravity.normalized;
-                        }
-
-                        //Reset Movement Values for when in air 
-                        {
-                            rb.angularDrag = 5;
-                            moveAcceleration = 1;
-                            rb.drag = .1f;                            
-                        }
-                        
-                        //Calulate the move direction, based on camera direction and input
-                        {
-                            moveDirection = Vector3.ClampMagnitude(
-                            Vector3.Cross(Camera.main.transform.right, groundNormal) * pitchAxisInput - Vector3.Cross(Camera.main.transform.forward, groundNormal) * rollAxisInput, 1);       
-                        }
-
-                        //Calulate angular acceleration ramp.                
-                        {
-                           // angularCoefficents = new Vector3(5, 4, 1);
-                        }
-
-                        //Angular Acceleration Input         
-                        {
-                           // rb.AddTorque(transform.right * pitchAxisInput * angularAccelerationBase * angularCoefficents.x, ForceMode.Acceleration);
-                        }
-
-                        //adjust Capsule Collider
-                        {
-                            float t = Mathf.InverseLerp(0, 2, Mathf.Abs(localAngularVelocity.x));                        
-                            capsuleCollider.radius = Mathf.Lerp(colliderRadiusMin, colliderRadiusMax, t);
-                            capsuleCollider.height = Mathf.Lerp(playerHeight, 0, t);
-                        }
-                        Quaternion previousRotation = transform.rotation;
-                        //Character faces the move direction    
-                        {
-                            if (moveDirection.magnitude > .1f)
-                                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, -gravity.normalized), Time.deltaTime * 10);
-                        }
-
-                        //Velocity follows move direction
-                        {
-                            RedirectVelocity(previousRotation, transform.rotation);
-                        }
-
-                        //Go into flying mode if focused, thrusting, and not grounded
-                        if (focus == 1 && thrust == 1)
-                        {
-                            flying = true;
-                        }
-
-                        if (rbVelocityMagnatude > 30)
-                        {                            
-                            flying = true;
-                        }
-                        
                     }
-                    */
 
-                    //Forward Acceleration in air, and on ground
+                    //Reset Movement Values for when on ground          
                     {
-                        Debug.DrawLine(transform.position, transform.position + moveDirection.normalized * 5, Color.black);
-                        netForce += moveDirection * moveAcceleration * 5;                     
+                        rb.angularDrag = 1000;
+                        moveAcceleration = 20;
+                        rb.drag = 1f;
+                    }
+                       
+                    //Calulate the move direction, based on camera direction and input
+                    {
+                        moveDirection = Vector3.ClampMagnitude(
+                        Vector3.Cross(Camera.main.transform.right, groundNormal) * pitchAxisInput - Vector3.Cross(Camera.main.transform.forward, groundNormal) * rollAxisInput, 1);       
+                    }
+
+                    //Set rotation on ground.
+                    {
+                        transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity.normalized), -gravity.normalized);
+                        rb.angularVelocity = Vector3.zero;
+                    }
+
+                    //Adjust Capsule Collider
+                    {                          
+                        capsuleCollider.radius = colliderRadiusMin;
+                        capsuleCollider.height = playerHeight;
+                    }
+
+                    //Character faces the move direction    
+                    {
+                        if (moveDirection.magnitude > .1f)
+                            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, -gravity.normalized), Time.deltaTime * 10);
+                    }
+
+                    //Jumping requires instant velocity change. Cant use netForce field.
+                    if (jump)
+                    {
+                        animator.SetTrigger("Jump");
+                        jump = false;
+                        grounded = false;
+                        rb.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
+                    }
+
+                    //Dash abblity
+                    if (thrustAsButtion)
+                    {
+                        thrustAsButtion = false;
+                        rb.AddForce(moveDirection * 50, ForceMode.VelocityChange);
+                    }
+                 
+
+                    //Forward Acceleration on ground
+                    {                       
+                        netForce += moveDirection * moveAcceleration;                     
                     }
 
                 }
                 else                                                                       
-               // if (flying)
+                if (canFly)
                 {
                     //reset these values for flight
                     {
@@ -356,7 +288,7 @@ public class SymphonicBehaviour : MonoBehaviour {
 
                     //adjust Capsule Collider
                     {
-                        float t = Mathf.InverseLerp(0, 2, Mathf.Abs(localAngularVelocity.x));
+                        float t = Mathf.InverseLerp(3.9f, 4, Mathf.Abs(localAngularVelocity.x));
                         capsuleCollider.radius = Mathf.Lerp(colliderRadiusMin, colliderRadiusMax, t);
                         capsuleCollider.height = Mathf.Lerp(playerHeight, 0, t);
                     }
@@ -364,7 +296,7 @@ public class SymphonicBehaviour : MonoBehaviour {
                     Vector3 flightForward;
                     Vector3 flightUp;
 
-                    //Define flight orientation relative to chracter transform, and velocity
+                    //Define flight orientation relative to chracter transform, and velocity, not currently working at all
                     {
                         flightForward = Vector3.Lerp(transform.forward, transform.up, 1);//Fix Later
                         flightUp = Vector3.Lerp(transform.up, -transform.forward, 1);//Fix Later
@@ -376,6 +308,7 @@ public class SymphonicBehaviour : MonoBehaviour {
 
                         Vector3 signedVelocityNormal = rbVelocityNormalized * Mathf.Sign(Vector3.Dot(rbVelocityNormalized, flightForward));
                         Vector3 unfocusedHeading = Vector3.Lerp(signedVelocityNormal,flightForward,thrust);//Lerp between using the Velocity and the characters flight forward for no rotation effect. Stabalizes forward flight at low thrust levels
+                        unfocusedHeading = Vector3.Lerp(flightForward, unfocusedHeading, rbVelocityMagnatude);//extra scale based on velocity for when stationary in air
 
                         targetHeading = Vector3.Lerp(unfocusedHeading, focusedHeading, focus);//Lerp between using the unfocusedHeading, and using the camera.
                     }
@@ -407,12 +340,12 @@ public class SymphonicBehaviour : MonoBehaviour {
                         }
                     }
 
-                    //Auto align towards the target heading.                    
+                    //Align towards the target heading.                    
                     {
                            
                         Vector3 axis = Vector3.Cross(flightForward, targetHeading);//Get the axis to turn around.
 
-                        float input = Mathf.Clamp01(Mathf.Abs(pitchAxisInput) + Mathf.Abs(rollAxisInput));//Scalar to negate auto turning                                               
+                        float input = Mathf.Clamp01(Mathf.Abs(pitchAxisInput * 2) + Mathf.Abs(rollAxisInput * 2));//Scalar to negate auto turning                                               
 
                         rb.AddTorque(axis * (1 - input) * 10, ForceMode.Acceleration);
 
@@ -432,18 +365,13 @@ public class SymphonicBehaviour : MonoBehaviour {
 
                     //Set Spinup values
                     {
-                        if (Mathf.Abs(rollAxisInput) == 1)
+                        if (Mathf.Abs(rollAxisInput) == 1 && thrust == 1)
                         {
-                            rollSpinUp += 1 * Time.deltaTime;
+                            rollSpinUp += 2 * Time.deltaTime;
                         }
                         else
                         {
-                            rollSpinUp -= 1 * Time.deltaTime;
-                        }
-
-                        if (insideVolume)
-                        {
-                            rollSpinUp = 1;
+                            rollSpinUp -= 2 * Time.deltaTime;
                         }
 
                         if (Mathf.Abs(pitchAxisInput) == 1)
@@ -459,31 +387,38 @@ public class SymphonicBehaviour : MonoBehaviour {
                         pitchSpinup = Mathf.Lerp(Mathf.Clamp01(pitchSpinup),0,thrust);
                     }
 
-                    //Calulate angular acceleration ramp.                
-                    {
-                        angularCoefficents = new Vector3(5 - (4 * thrust), 4, 1);//new Vector3(1, 4, 1);//(1 + pitchSpinup * 5)
+                    //Calulate angular acceleration ramp.
+                    {                      
+                        angularCoefficents = new Vector3(
+                        5 - (4 * thrust),
+                        4 * Mathf.Lerp(.5f, 1, Mathf.InverseLerp(0, 20, rbVelocityMagnatude)),
+                        1
+                        );
+                        //new Vector3(1, 4, 1);//(1 + pitchSpinup * 5)
                     }
 
                     //Angular Acceleration              
                     {
-                        //Roll
+                        //Roll - y
                         rb.AddTorque(-flightForward * rollAxisInput * angularAccelerationBase * angularCoefficents.y * (1 + rollSpinUp * 2), ForceMode.Acceleration);
-                        //Pitch
+                        //Pitch - x
                         rb.AddTorque(transform.right * pitchAxisInput * angularAccelerationBase * angularCoefficents.x, ForceMode.Acceleration);
-                        //Yaw
+                        //Yaw - z
                         rb.AddTorque(flightUp * yawAxisInput * angularAccelerationBase * angularCoefficents.z, ForceMode.Acceleration);
                     }
 
                     //Forward Acceleration             
                     {
-                        netForce += flightForward * Mathf.Max(0, thrust) * moveAcceleration * (1 + rollSpinUp);
+                        float t = Mathf.InverseLerp(10, 20, Mathf.Abs(localAngularVelocity.y));
+                        moveAcceleration = Mathf.Lerp(20, 60, t);                        
+                        netForce += flightForward * thrust * moveAcceleration;
                     }
 
                     //Hover and gliding
                     if (jump)
                     {
-                        jump = false;                                     
-                        netForce += -gravity;
+                       // jump = false;                                     
+                        //netForce += -gravity;
                     }
 
                     //Boost
@@ -539,8 +474,76 @@ public class SymphonicBehaviour : MonoBehaviour {
                         LiftForce(flightForward, liftScale);
                     }
 
-                }                
-                break;
+                    
+                    if (focus == 0 && thrust == 0 && rbVelocityMagnatude < 30)
+                    {
+                       // canFly = false;
+                    }
+                }                 
+                else //airborn falling, not flight                  
+                {
+                    Vector3 moveDirection;
+
+                    //No ground raycast as we are in air, use gravity for up direction.
+                    {
+                        groundNormal = -gravity.normalized;
+                    }
+
+                    //Reset Movement Values for when in air 
+                    {
+                        rb.angularDrag = 5;
+                        moveAcceleration = 1;
+                        rb.drag = .1f;                            
+                    }
+                        
+                    //Calulate the move direction, based on camera direction and input
+                    {
+                        moveDirection = Vector3.ClampMagnitude(
+                        Vector3.Cross(Camera.main.transform.right, groundNormal) * pitchAxisInput - Vector3.Cross(Camera.main.transform.forward, groundNormal) * rollAxisInput, 1);       
+                    }
+
+                    //Calulate angular acceleration ramp.                
+                    {
+                        // angularCoefficents = new Vector3(5, 4, 1);
+                    }
+
+                    //Angular Acceleration Input         
+                    {
+                        // rb.AddTorque(transform.right * pitchAxisInput * angularAccelerationBase * angularCoefficents.x, ForceMode.Acceleration);
+                    }
+
+                    //adjust Capsule Collider
+                    {
+                        float t = Mathf.InverseLerp(0, 2, Mathf.Abs(localAngularVelocity.x));                        
+                        capsuleCollider.radius = Mathf.Lerp(colliderRadiusMin, colliderRadiusMax, t);
+                        capsuleCollider.height = Mathf.Lerp(playerHeight, 0, t);
+                    }
+
+                    Quaternion previousRotation = transform.rotation;
+                    //Character faces the move direction    
+                    {
+                        if (moveDirection.magnitude > .1f)
+                            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(moveDirection, -gravity.normalized), Time.deltaTime * 10);
+                    }
+
+                    //Velocity follows move direction
+                    {
+                      //  RedirectVelocity(previousRotation, transform.rotation);
+                    }
+
+                    //Go into flying mode if focused, thrusting, and not grounded
+                    if (focus == 1 && thrust == 1)
+                    {
+                        canFly = true;
+                    }
+
+                    //if (rbVelocityMagnatude > 30)
+                    {
+                        //canFly = true;
+                    }
+                        
+                }                    
+                    break;
             case Signature.Echo:
             
                 break;
@@ -551,6 +554,40 @@ public class SymphonicBehaviour : MonoBehaviour {
               
                 break;
         }              
+    }
+
+    void MaintainSpin(float spin)
+    {
+        rb.angularVelocity = rb.angularVelocity.normalized * 20;
+    }
+
+    //Trail 
+    void TrailControl()
+    {
+        float widthMultiplier;
+
+        float beginTrailSpeed = 40;
+        float trailGrowRange = 30;
+
+        float velScale = Mathf.Clamp01((rbVelocityMagnatude - beginTrailSpeed) / trailGrowRange);
+        float widthScale = 1 + (Mathf.Clamp01(Mathf.Abs(localAngularVelocity.y) / 20) * 2);
+        float angxDisable = 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.x / 5));// if pitch speed is 0.2 or greater disable width.              
+
+        widthMultiplier = velScale * angxDisable * widthScale;
+
+        widthMultiplier *= Mathf.Clamp01((Vector3.Dot(rbVelocityNormalized, transform.up) * 2) - 1);          
+
+        if (trailRendererLeft != null)
+        {
+            trailRendererLeft.widthMultiplier = 0.05f * widthMultiplier;
+            trailRendererLeft.time = widthMultiplier == 0 ? 0 : 0.2f;
+        }
+
+        if (trailRendererRight != null)
+        {
+            trailRendererRight.widthMultiplier = 0.05f * widthMultiplier;
+            trailRendererRight.time = widthMultiplier == 0 ? 0 : 0.2f;
+        }
     }
 
     private void Update()
@@ -567,9 +604,29 @@ public class SymphonicBehaviour : MonoBehaviour {
     {    
         netForce = Vector3.zero;
 
+        rb.centerOfMass = Vector3.zero;
+
+        //Set animator values 
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", rbVelocityMagnatude, 0.1f, Time.deltaTime);
+            animator.SetFloat("RotZ", Mathf.Abs(localAngularVelocity.z), 0.1f, Time.deltaTime);
+            animator.SetFloat("RotX", Mathf.Abs(localAngularVelocity.x), 0.1f, Time.deltaTime);
+            animator.SetFloat("RotY", Mathf.Abs(localAngularVelocity.y), 0.1f, Time.deltaTime);
+            animator.SetFloat("Drag", rb.drag / .2f, 0.3f, Time.deltaTime);
+            animator.SetFloat("DragDir", lateralDrag, 0.1f, Time.deltaTime);
+            animator.SetBool("Grounded", grounded);
+            animator.SetBool("CanFly", canFly);           
+        }
+
+        if (insideVolume)
+        {
+            MaintainSpin(localAngularVelocity.x);
+        }
+
         //Intangibility 
         {
-            if (rollSpinUp == 1)                
+            if (Mathf.Abs(localAngularVelocity.y) > 15)                
             {
                 capsuleCollider.isTrigger = true;
             }
@@ -587,11 +644,17 @@ public class SymphonicBehaviour : MonoBehaviour {
         }
 
         //Gravity       
-        {               
-            if(gM != null)
-            gravity = gM.ReturnGravity(transform);
+        {
+            if (gM != null)
+            {
+                gravity = gM.ReturnGravity(transform);
+            }
+            else
+            {
+                gravity = Vector3.Lerp(gravity, Vector3.zero, Time.deltaTime);
+            }
 
-            netForce += gravity * (1 - rollSpinUp);
+            netForce += gravity * Mathf.InverseLerp(7,0,Mathf.Abs(localAngularVelocity.y));
         }
 
         // Main Symphonic Behaviour function
@@ -607,7 +670,7 @@ public class SymphonicBehaviour : MonoBehaviour {
         //Hair Scale
         {
             float scale = Mathf.Clamp01(1-Mathf.Abs(localAngularVelocity.x/10));
-            if (usingFeet) scale = 0.0001f;
+            if (grounded) scale = 0.0001f;
 
             if (hairLeft != null)
                 hairLeft.transform.localScale = new Vector3(scale, scale, scale);
@@ -616,45 +679,7 @@ public class SymphonicBehaviour : MonoBehaviour {
                 hairRight.transform.localScale = new Vector3(scale, scale, scale);
         }
 
-        //Set animator values 
-        if (animator != null)
-        {                          
-            animator.SetFloat("Speed", rbVelocityMagnatude, 0.1f, Time.deltaTime);
-            animator.SetFloat("RotZ", Mathf.Abs(localAngularVelocity.z), 0.1f, Time.deltaTime);
-            animator.SetFloat("RotX", Mathf.Abs(localAngularVelocity.x), 0.1f, Time.deltaTime);
-            animator.SetFloat("RotY", Mathf.Abs(localAngularVelocity.y), 0.1f, Time.deltaTime);          
-            animator.SetFloat("Drag", rb.drag/.2f, 0.1f, Time.deltaTime);
-            animator.SetFloat("DragDir", lateralDrag, 0.1f, Time.deltaTime);
-            animator.SetBool("Grounded", usingFeet);
-        }
-
-        //Trail 
-        {
-            float widthMultiplier;
-
-            float beginTrailSpeed = 40;
-            float trailGrowRange = 30;
-
-            float velScale = Mathf.Clamp01((rbVelocityMagnatude - beginTrailSpeed) / trailGrowRange);
-            float widthScale = 1 + (Mathf.Clamp01(Mathf.Abs(localAngularVelocity.y) / 20) * 2);
-            float angxDisable = 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.x / 5));// if pitch speed is 0.2 or greater disable width.              
-
-            widthMultiplier = velScale * angxDisable * widthScale;
-
-            widthMultiplier *= Mathf.Clamp01(Vector3.Dot(rbVelocityNormalized, transform.up));            
-
-            if (trailRendererLeft != null)
-            {
-                trailRendererLeft.widthMultiplier = 0.05f * widthMultiplier;
-                trailRendererLeft.time = widthMultiplier == 0 ? 0 : 0.6f;
-            }
-
-            if (trailRendererRight != null)
-            {
-                trailRendererRight.widthMultiplier = 0.05f * widthMultiplier;
-                trailRendererRight.time = widthMultiplier == 0 ? 0 : 0.6f;
-            }
-        }
+        TrailControl();
 
         //Emission Control
         {
@@ -664,6 +689,10 @@ public class SymphonicBehaviour : MonoBehaviour {
                 emission += .5f * Time.deltaTime;
             else
                 emission -= .5f * Time.deltaTime;
+
+            float emissionMin = 0;
+            if (!grounded && canFly)
+                emissionMin = .1f;
 
             emission = Mathf.Clamp(emission, 0, 1);
 
@@ -685,7 +714,7 @@ public class SymphonicBehaviour : MonoBehaviour {
         {
             Vector3 headHeight = new Vector3(0, 1f, 0);
 
-            if (!usingFeet)
+            if (!grounded)
             {
                 camLocalOffsetTarget = Vector3.zero;
                 cameraControl.zoomDistanceMin = 2;
@@ -750,8 +779,25 @@ public class SymphonicBehaviour : MonoBehaviour {
         float beatScale = 1;
         emission += 1 * beatScale;
         //boostCharge = 1;
-    }    
-    
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.tag == "Water")
+        {
+            previousMediumDensity = currentMediumDensity;
+            currentMediumDensity = .1f;            
+        }
+        CauseCameraShake(rbVelocityMagnatude / 20);
+
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        currentMediumDensity = previousMediumDensity;
+        previousMediumDensity = 0;
+    }
+
     IEnumerator OldBoost(Vector3 dir, float magnitude, float startTime, float duration, float cooldown)
     {        
         yield return new WaitForSeconds(startTime);
@@ -763,9 +809,7 @@ public class SymphonicBehaviour : MonoBehaviour {
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (rollSpinUp == 1) insideVolume = true;
-
-        if (!usingFeet)
+        if (!grounded)
         {
             float shake = 0;
             Vector3 hitPoint = collision.GetContact(0).point;
@@ -782,7 +826,7 @@ public class SymphonicBehaviour : MonoBehaviour {
                     {                        
                         emission = 1;
                         if (landParticleExplosion != null)
-                            Instantiate(landParticleExplosion, hitPoint, transform.rotation);
+                            Instantiate(landParticleExplosion, hitPoint + hitNormal, Quaternion.LookRotation(hitNormal) * Quaternion.Euler(90,0,0));
                     }
 
                     //Explosion force
@@ -806,15 +850,17 @@ public class SymphonicBehaviour : MonoBehaviour {
             }
 
             //Character effects
-            {                
-                transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, hitNormal), hitNormal);
-                rb.angularVelocity = Vector3.zero;
+            {
+
                 //rb.velocity = Vector3.zero;
-                usingFeet = true;
-                //Exit Flight
-                if (usingFeet)
+
+                RaycastHit hit;
+
+                if (Physics.Raycast(transform.position, gravity, out hit, 1.8f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
                 {
-                    flying = false;
+                    grounded = true;
+                    // transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, hitNormal), hitNormal);
+                    // rb.angularVelocity = Vector3.zero;
                 }
             }
 

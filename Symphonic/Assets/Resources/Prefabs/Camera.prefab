@@ -61,12 +61,13 @@ MonoBehaviour:
   - {fileID: 0}
   followIndexPosition: 0
   trackIndexPosition: 1
-  followingTarget: 0
+  followingTarget: 1
   tracking: 0
   freeCamSpeed: 200
   mouseSensitivity: 100
   joystickSensitivity: 100
   localOffset: {x: 0, y: 0.7, z: 0}
+  overrideLocalOffset: 0
   lerpSpeed: 20
   upVector: {x: 0, y: 1, z: 0}
   mouseMoveScalar: 0
@@ -78,7 +79,6 @@ MonoBehaviour:
   rot: {x: 0, y: 0}
   targetRotation: {x: 0, y: 0, z: 0, w: 0}
   gM: {fileID: 0}
-  gravity: {x: -0, y: -1, z: -0}
 --- !u!54 &8602766832191836160
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -126,7 +126,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 311
+    m_Bits: 4294967295
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0

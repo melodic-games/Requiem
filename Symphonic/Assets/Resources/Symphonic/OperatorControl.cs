@@ -7,7 +7,8 @@ public class OperatorControl : MonoBehaviour {
     public Rigidbody targetRb;
     private bool targetFindAtempted = false;
     private Animator animator;
-    private Rigidbody rb;
+    private float lerp = 0;
+    //private Rigidbody rb;
     public int movementMode = 0; //0: move to target position with offset, 1: move to world position with offset.
     public Vector3 targetPosition = Vector3.zero;
     private Vector3 deviation;
@@ -17,22 +18,28 @@ public class OperatorControl : MonoBehaviour {
     public float offsetDistance = 2;
     private Vector3 localOffset = Vector3.zero;
     [Range(0, 4)]
-    public float distancePowerMutiplier = 2;
-    public Vector3 worldPosition = Vector3.zero;  
-    
+    private float distancePowerMutiplier = 2;
+    public Vector3 worldPosition = Vector3.zero;
+    private Vector3 orbitPoint;
     private Vector3 velNorm;
     private float velMag;
-    private TrailRenderer trail;
-    private float trailtime = 0.6f;
+    private Vector3 previousPosition;
+
+    public TrailRenderer trailRenderer1;
+    public TrailRenderer trailRenderer2;
+    public TrailRenderer trailRenderer3;
+    public TrailRenderer trailRenderer4;
+
     private float accelDir;
 
+    public SymphonicBehaviour symBehaviour;
 
     void Start () {
 
-        trail = GetComponent<TrailRenderer>();
+       
 
-        rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;
+        //rb = GetComponent<Rigidbody>();
+        //rb.useGravity = false;
 
         float cosx = Mathf.Cos(xOffsetRotation * Mathf.Deg2Rad);
         localOffset = new Vector3(Mathf.Sin(yOffsetRotation * Mathf.Deg2Rad) * cosx, Mathf.Sin(xOffsetRotation * Mathf.Deg2Rad), Mathf.Cos(yOffsetRotation * Mathf.Deg2Rad) * cosx) * offsetDistance;
@@ -46,6 +53,9 @@ public class OperatorControl : MonoBehaviour {
 
         animator = GetComponent<Animator>();
 
+        previousPosition = transform.position;
+        orbitPoint = transform.position;
+
     }
 
     private void JumpToTarget()
@@ -53,63 +63,149 @@ public class OperatorControl : MonoBehaviour {
         transform.position = target.transform.position + target.transform.TransformVector(localOffset);
     }
 
-    private void Update()
+    private void TrailUpdate()
     {
-        trail.time = trailtime;
-
-        if (target == null && !targetFindAtempted)
+      
+        //Trail 
         {
-            target = GameObject.FindGameObjectsWithTag("Player")[0];
-            targetRb = target.GetComponent<Rigidbody>();
-            targetFindAtempted = true;
-        }
-        else
-        {
-            targetFindAtempted = false;
-        }
+            float widthMultiplier;
 
-    }
+            float beginTrailSpeed = 40;
+            float trailGrowRange = 30;
 
-    void FixedUpdate()
-    {
-        Vector3 forwardDirection;
-        Vector3 upDirection;
+            float velScale = Mathf.Clamp01((velMag - beginTrailSpeed) / trailGrowRange);
 
-        //Update Physics Optimazation Values
-        if(rb != null)
-        {
-            velNorm = rb.velocity.normalized;
-            velMag = rb.velocity.magnitude;
-        }
+            float widthScale;
+            float angxDisable;
 
-        //Determin target position and rotation info
-        {
-            float cosx = Mathf.Cos(xOffsetRotation * Mathf.Deg2Rad);
-            localOffset = new Vector3(Mathf.Sin(yOffsetRotation * Mathf.Deg2Rad) * cosx, Mathf.Sin(xOffsetRotation * Mathf.Deg2Rad), Mathf.Cos(yOffsetRotation * Mathf.Deg2Rad) * cosx) * offsetDistance;
-            float t;
-            if (targetRb != null)
+            if (symBehaviour != null)
             {
-                t = Mathf.InverseLerp(5,30,targetRb.velocity.magnitude);
+                widthScale = .5f + (Mathf.Clamp01(Mathf.Abs(symBehaviour.localAngularVelocity.y) / 20) * 2);
+                angxDisable = 1 - Mathf.Clamp01(Mathf.Abs(symBehaviour.localAngularVelocity.x / 5));// if pitch speed is 0.2 or greater disable width.             
             }
             else
             {
-                t = 0.5f;
+                widthScale = .5f;
+                angxDisable = 1;            
             }
 
-            deviationScale = Mathf.Lerp(deviationScale, Mathf.Lerp(1, 8, t),Time.deltaTime * 3);
+            widthMultiplier = velScale * angxDisable * widthScale;
+            
+            widthMultiplier *= Mathf.Clamp01((Vector3.Dot(velNorm, transform.forward) * 2) - 1);
 
-            deviation = Vector3.LerpUnclamped(Vector3.zero, new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f), deviationScale);
+            if (trailRenderer1 != null)
+            {
+                trailRenderer1.widthMultiplier = 0.05f * widthMultiplier;
+                trailRenderer1.time = widthMultiplier == 0 ? 0 : 0.2f;
+            }
 
-            if (movementMode == 0 && target != null)// move to target position with offset
+            if (trailRenderer2 != null)
+            {
+                trailRenderer2.widthMultiplier = 0.05f * widthMultiplier;
+                trailRenderer2.time = widthMultiplier == 0 ? 0 : 0.2f;
+            }
+
+            if (trailRenderer3 != null)
+            {
+                trailRenderer3.widthMultiplier = 0.05f * widthMultiplier;
+                trailRenderer3.time = widthMultiplier == 0 ? 0 : 0.2f;
+            }
+
+            if (trailRenderer4 != null)
+            {
+                trailRenderer4.widthMultiplier = 0.05f * widthMultiplier;
+                trailRenderer4.time = widthMultiplier == 0 ? 0 : 0.2f;
+            }
+
+        }   
+
+    }
+
+    void Update()
+    {
+
+        {
+            if (target == null && !targetFindAtempted)
+            {
+                target = GameObject.FindGameObjectsWithTag("Player")[0];
+                targetRb = target.GetComponent<Rigidbody>();
+                targetFindAtempted = true;
+            }
+            else
+            {
+                targetFindAtempted = false;
+            }
+        }
+
+        TrailUpdate();
+
+
+        Vector3 forwardDirection;
+        Vector3 upDirection;
+        
+        //Update Physics Optimazation Values
+        {
+            Vector3 velocity = (transform.position - previousPosition)/ Time.deltaTime;
+            velNorm = velocity.normalized;
+            velMag = velocity.magnitude;
+            previousPosition = transform.position;
+        }
+
+        //LocalOffset
+        {
+            float cosx = Mathf.Cos(xOffsetRotation * Mathf.Deg2Rad);
+            localOffset = new Vector3(Mathf.Sin(yOffsetRotation * Mathf.Deg2Rad) * cosx, Mathf.Sin(xOffsetRotation * Mathf.Deg2Rad), Mathf.Cos(yOffsetRotation * Mathf.Deg2Rad) * cosx) * offsetDistance;
+        }
+
+        //Deviation and lerp
+        { 
+            if (targetRb != null)
+            {            
+                lerp = Mathf.Lerp(lerp, Mathf.InverseLerp(2, 80, targetRb.velocity.magnitude), Time.deltaTime * 1);
+                deviationScale = Mathf.Lerp(deviationScale, Mathf.Lerp(1, 10, Mathf.InverseLerp(5, 30, targetRb.velocity.magnitude)), Time.deltaTime * 2);
+            }
+            else
+            {
+                lerp = Time.deltaTime;
+                deviationScale = Mathf.Lerp(deviationScale, 3, Time.deltaTime * 2);
+            }
+
+            deviation = new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f) * (deviationScale + 1);
+            //deviation = ((target.transform.right * Mathf.Sin(Time.time * 1) * 0.2f) + (target.transform.forward * Mathf.Cos(Time.time * 1) * 0.2f)) * (deviationScale + 1);
+        }
+
+        //Movement mode behaviour
+        {
+            if (movementMode == 0 && target != null)// move to target position with offset, reset worldPosition to current position, find facing directions
             {
                 worldPosition = transform.position;
 
                 targetPosition = target.transform.position + localOffset;
 
-                forwardDirection = Vector3.Lerp(target.transform.forward, velNorm, velMag);
-                upDirection = Vector3.up;
+                Vector3 groundForward = Vector3.Lerp(target.transform.forward, velNorm, velMag);
+                Vector3 flyForward = Vector3.Lerp(velNorm,target.transform.up, velMag);
+
+                if (symBehaviour != null)
+                {                
+                    if (symBehaviour.grounded)
+                    {
+                        forwardDirection = groundForward;
+                        upDirection = Vector3.up;
+                    }
+                    else
+                    {
+                        forwardDirection = flyForward;
+                        upDirection = Vector3.Lerp(Vector3.up, -target.transform.forward, velMag);
+                    }
+                }
+                else
+                {
+                    forwardDirection = groundForward;
+                    upDirection = Vector3.up;
+                }               
+                
             }
-            else // move to world position with offset.
+            else //Move to world position with offset, find facing directions
             {
                 targetPosition = worldPosition + localOffset;
                 if (target != null)
@@ -125,36 +221,14 @@ public class OperatorControl : MonoBehaviour {
                     upDirection = transform.up;
                 }
             }
-
         }
+                   
+        
+        orbitPoint = Vector3.Lerp(orbitPoint, targetPosition, lerp);
 
-        if (rb != null)
-        {         
+        transform.position = orbitPoint + deviation;      
 
-            Vector3 dirToTarget = ((targetPosition + deviation) - transform.position).normalized;
-
-             float goalSpeedTowardsTarget = Mathf.Pow(Vector3.Distance(transform.position, targetPosition + deviation),distancePowerMutiplier);
-
-            float signedSpeedTowardsTarget = velMag * Vector3.Dot(velNorm, dirToTarget);
-
-            float speed = (goalSpeedTowardsTarget - signedSpeedTowardsTarget) * 40;
-
-            accelDir = Mathf.Clamp(speed,-1,1);
-                       
-            rb.AddForce(dirToTarget * speed);
-
-
-            {
-                //Lift Force
-                Vector3 forceVector = Vector3.Cross(dirToTarget, -velNorm).normalized;
-                Vector3 crossVector = Vector3.Cross(forceVector, dirToTarget);
-                Vector3 force = crossVector * velMag * Vector3.Dot(crossVector, -velNorm) * 5;
-                rb.AddForce(force);
-            }          
-            
-        }
-
-       // transform.position = targetPosition + deviation;
+        //transform.rotation = Quaternion.Euler(target.transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, target.transform.rotation.eulerAngles.z);
 
         transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(forwardDirection, upDirection), Time.deltaTime * 10);
 

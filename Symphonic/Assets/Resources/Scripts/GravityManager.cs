@@ -10,6 +10,8 @@ public class GravityManager : MonoBehaviour
     public static GravityManager gM;   
     public List<GravitySource> gravitySources;
     public List<GravityChain> gravityChains;
+    public Vector3 sceneGravity = new Vector3(0, -9.81f, 0);
+    public bool sceneGravityUpdatesHere = true;
 
     void Awake()
     {
@@ -50,10 +52,18 @@ public class GravityManager : MonoBehaviour
         }
     }
 
+    private void ManualSceneGravity(bool enable)
+    {
+        if (enable)
+            Physics.gravity = sceneGravity;
+        else
+            sceneGravity = Physics.gravity;
+    }
+
     private void FixedUpdate()
     {
-        sceneGravityMag = Physics.gravity.magnitude;
-
+        ManualSceneGravity(sceneGravityUpdatesHere);
+        sceneGravityMag = sceneGravity.magnitude;
     }
 
     private void LateUpdate()
@@ -77,10 +87,13 @@ public class GravityManager : MonoBehaviour
             if (gs.trackingTransform != mytransform)               
             //add case statement here for different gravity types
             objectGravity += gs.mass / Vector3.SqrMagnitude(mytransform.position - gs.position) * (gs.position - mytransform.position).normalized;//sphearical gravity           
-        }                             
+        }
 
-        //Cancel out Scene gravity when object gravity magnitude is the same size or bigger.                 
-        float disable = Mathf.Max(0, (sceneGravityMag - objectGravity.magnitude) / sceneGravityMag);
+        //Cancel out Scene gravity when object gravity magnitude is the same size or bigger.       
+        
+            float disable = 1;
+        if (sceneGravityMag > 0)
+            disable = Mathf.Max(0, (sceneGravityMag - objectGravity.magnitude) / sceneGravityMag);
 
         return gravity = Physics.gravity * disable + objectGravity;        
     }

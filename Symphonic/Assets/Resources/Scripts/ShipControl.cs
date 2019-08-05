@@ -14,15 +14,15 @@ public class ShipControl : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void FixedUpdate () {
 
         timer += -1 * Time.deltaTime;
 
-        if(timer < 0)
+     
         {
             timer = 1;
 
-            dir = (new Vector3(anchor.transform.position.x + Random.Range(-30, 30),50, anchor.transform.position.z + Random.Range(-30, 30)) - transform.position);
+            dir = (new Vector3(anchor.transform.position.x + Random.Range(-30, 30),250, anchor.transform.position.z + Random.Range(-30, 30)) - transform.position);
         }
 
         transform.rotation = Quaternion.Lerp(transform.rotation,Quaternion.LookRotation(dir.normalized, Vector3.up),Time.deltaTime * .2f);
