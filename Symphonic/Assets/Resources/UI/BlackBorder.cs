@@ -7,11 +7,34 @@ public class BlackBorder : MonoBehaviour
     public Texture image;
     [Range(0, 1)]
     public float scale = 1;
+    [Range(0, 1)]
+    public float target = 0;
+
     public float height = 0;
+
 
     private void Update()
     {
-        scale = Mathf.Lerp(scale, Input.GetAxis("Focus"), Time.deltaTime * 5);
+
+        if (Input.GetAxisRaw("Focus") == 1)
+            target = 1;
+        else
+            target = 0;
+
+        if (Time.time > .5f)
+        {            
+            float dir = Mathf.Sign(target - scale);
+            float dist = Mathf.Abs(target - scale);
+            if (dist > Time.deltaTime)
+            {
+                scale = Mathf.Clamp01(scale + dir *  6 * Time.deltaTime);
+            }
+            else
+            {
+                scale = target;
+            }
+        }
+
         height = Screen.height / 12;
     }
 

@@ -62,6 +62,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\AnimationSpeedSeter.cs" />
+    <Compile Include="Assets\DashPrototype.cs" />
     <Compile Include="Assets\Resources\DynamicBone\Demo\DynamicBoneDemo1.cs" />
     <Compile Include="Assets\Resources\DynamicBone\Scripts\DynamicBone.cs" />
     <Compile Include="Assets\Resources\DynamicBone\Scripts\DynamicBoneCollider.cs" />
@@ -78,6 +80,7 @@
     <Compile Include="Assets\Resources\Scripts\DrillBehaviour.cs" />
     <Compile Include="Assets\Resources\Scripts\DrillShotBehaviour.cs" />
     <Compile Include="Assets\Resources\Scripts\DrillShotSpawn.cs" />
+    <Compile Include="Assets\Resources\Scripts\FadeScreen.cs" />
     <Compile Include="Assets\Resources\Scripts\FreeLookCam.cs" />
     <Compile Include="Assets\Resources\Scripts\GameControllerScript.cs" />
     <Compile Include="Assets\Resources\Scripts\Gravity.cs" />
@@ -140,11 +143,11 @@
     <Compile Include="Assets\Resources\UI\BlackBorder.cs" />
     <Compile Include="Assets\TestRotationFix.cs" />
     <None Include="Assets\OLD\VoidProject\VoidPlatform\RigLights.shader" />
-    <None Include="Assets\Resources\Models\Transporter\Shaders\NewHologramScanlines.shader" />
+    <None Include="Assets\Models\Transporter\Shaders\NewHologramScanlines.shader" />
     <None Include="Assets\Muscle Animation Editor\Readme.txt" />
     <None Include="Assets\OLD\VoidProject\VoidPlatform\Blackhole_GradientSmoothingSPS.shader" />
     <None Include="Assets\OLD\VoidProject\VoidBelts\Gem.shader" />
-    <None Include="Assets\Resources\Models\Transporter\Shaders\NewPBRAnimatedEmissive.shader" />
+    <None Include="Assets\Models\Transporter\Shaders\NewPBRAnimatedEmissive.shader" />
     <None Include="Assets\OLD\VoidProject\ChromaticAberrationShader.shader" />
     <None Include="Assets\Resources\DynamicBone\ReadMe.txt" />
     <Reference Include="Unity.Timeline.Editor">

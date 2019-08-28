@@ -25,10 +25,8 @@ public class OperatorControl : MonoBehaviour {
     private float velMag;
     private Vector3 previousPosition;
 
-    public TrailRenderer trailRenderer1;
-    public TrailRenderer trailRenderer2;
-    public TrailRenderer trailRenderer3;
-    public TrailRenderer trailRenderer4;
+    public TrailRenderer trailRenderer;
+
 
     private float accelDir;
 
@@ -93,28 +91,10 @@ public class OperatorControl : MonoBehaviour {
             
             widthMultiplier *= Mathf.Clamp01((Vector3.Dot(velNorm, transform.forward) * 2) - 1);
 
-            if (trailRenderer1 != null)
+            if (trailRenderer != null)
             {
-                trailRenderer1.widthMultiplier = 0.05f * widthMultiplier;
-                trailRenderer1.time = widthMultiplier == 0 ? 0 : 0.2f;
-            }
-
-            if (trailRenderer2 != null)
-            {
-                trailRenderer2.widthMultiplier = 0.05f * widthMultiplier;
-                trailRenderer2.time = widthMultiplier == 0 ? 0 : 0.2f;
-            }
-
-            if (trailRenderer3 != null)
-            {
-                trailRenderer3.widthMultiplier = 0.05f * widthMultiplier;
-                trailRenderer3.time = widthMultiplier == 0 ? 0 : 0.2f;
-            }
-
-            if (trailRenderer4 != null)
-            {
-                trailRenderer4.widthMultiplier = 0.05f * widthMultiplier;
-                trailRenderer4.time = widthMultiplier == 0 ? 0 : 0.2f;
+                trailRenderer.widthMultiplier = 0.05f * widthMultiplier;
+                trailRenderer.time = widthMultiplier == 0 ? 0 : 0.2f;
             }
 
         }   
