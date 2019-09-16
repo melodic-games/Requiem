@@ -5,8 +5,9 @@ using UnityEngine;
 public class CameraControl : MonoBehaviour {
 
     //target information
-    [Header("Target Information")]
-    public Transform targetingReticle;
+    [Header("Target Information")]    
+    public Vector3 characterTargetingPosition = Vector3.zero;
+    public Vector3 cameraTargetingPosition = Vector3.zero;
     public GameObject[] targets;
     public int followIndexPosition = 0;
     public int trackIndexPosition = 1;
@@ -25,17 +26,18 @@ public class CameraControl : MonoBehaviour {
     private Vector2 joystickMovement = Vector2.zero;
     public Vector3 localOffset = Vector3.zero;   
     public float lerpSpeed = 20;  
-    private float trackLerpScale = 0;
+    public float trackLerpScale = 0;
     private Vector3 upVector = Vector3.up;
     public Vector3 manualUpVector = Vector3.up;
+    public float manualUpVectorScaler = 0;
     public float zoom;
     public bool clippingAllowed = false;
     public float zoomDistanceMin = 2;
     public float zoomDistanceMax = 10;
     public bool upReset = true;
-
+    public bool lockCursor;
     public float shakeTime = 0;
-    [Range(0,10)]
+    [Range(0,20)]
     public float shakeTimeSpeed = 10;
 
     private Vector3 positionPrevious;
@@ -46,9 +48,7 @@ public class CameraControl : MonoBehaviour {
 
     public float shakeMagnatude = 1;
 
-    private Vector2 rot = Vector2.zero;
-    public bool useClassicCam = false;
-    private Vector2 classicCamRot = Vector2.zero;
+    public Vector2 rot = Vector2.zero;
     private Quaternion targetRotation;
     private Vector3 orbitPoint;
     private Rigidbody rb;
@@ -56,6 +56,7 @@ public class CameraControl : MonoBehaviour {
     //Gravity data
     [Header("Gravity Data")]
     public GravityManager gM;
+    
 
     void Start () {
         rb = GetComponent<Rigidbody>();
@@ -68,6 +69,8 @@ public class CameraControl : MonoBehaviour {
             targets[followIndexPosition] = GameObject.FindGameObjectWithTag("Player");
         
             orbitPoint = transform.position - transform.forward * 2;
+
+            zoom = 10;
     }
 
     Vector3 CalulateCentripetalForce(Vector3 vel, Vector3 velPrev)
@@ -91,11 +94,15 @@ public class CameraControl : MonoBehaviour {
 
     void Update()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        
+        if (lockCursor)
+            Cursor.lockState = CursorLockMode.Locked;
+        else
+            Cursor.lockState = CursorLockMode.None;
+
         //lower shakeMagnatude over time
         { 
-            shakeMagnatude = Mathf.Lerp(shakeMagnatude, 0, Time.deltaTime * 8);
+            shakeMagnatude = Mathf.Lerp(shakeMagnatude, 0, Time.deltaTime * 4);
+            //shakeMagnatude = Mathf.Clamp01(shakeMagnatude);
         }
 
         //Update Physics Values
@@ -121,23 +128,7 @@ public class CameraControl : MonoBehaviour {
         {
             float disable = Mathf.Clamp01(Time.time / 4);
             rot = new Vector2(Mathf.Lerp(rot.x, mouseMovement.y + joystickMovement.y, Time.deltaTime * 10), Mathf.Lerp(rot.y, mouseMovement.x + joystickMovement.x, Time.deltaTime * 10 * disable));
-           
-            //Original Controls
-            if (!useClassicCam)
-            {                                
-                targetRotation *= Quaternion.Euler(rot.x, rot.y, 0.0f);
-
-                classicCamRot.x = targetRotation.eulerAngles.x;
-                classicCamRot.x = Mathf.Clamp(classicCamRot.x, -90, 90);
-                classicCamRot.y = targetRotation.eulerAngles.y;
-            }
-            else
-            //Clasic Camera
-            {
-                classicCamRot += rot;
-                classicCamRot.x = Mathf.Clamp(classicCamRot.x, -90, 90);
-                targetRotation = Quaternion.Slerp(targetRotation, Quaternion.Euler(classicCamRot.x, classicCamRot.y, 0), Time.deltaTime * 10 * disable);
-            }
+            targetRotation *= Quaternion.Euler(rot.x, rot.y, 0.0f);
         }
 
         //Upvector Adjust. Have camera up lerped by gravity magnitude, between facing away from gravity, and the custom up vector. If Gm does not exist lerp to the custom up vector
@@ -146,7 +137,8 @@ public class CameraControl : MonoBehaviour {
             if(gM != null)
             {
                 //Calulate Up Direction Vector By Gravity
-                Vector3 gmReturn = -gM.ReturnGravity(transform);
+                Vector3 gmReturn = -gM.ReturnGravity(transform);                
+                gmReturn = Vector3.Lerp(gmReturn, manualUpVector, manualUpVectorScaler);
                 upVector = Vector3.Lerp(manualUpVector,gmReturn.normalized, gmReturn.magnitude);
             }
             else
@@ -168,6 +160,7 @@ public class CameraControl : MonoBehaviour {
             {
                 float followTargetSpeed = 0;
 
+                if (Time.deltaTime > 0)
                 {
                     followTargetSpeed = (targets[followIndexPosition].transform.position - followPreviousPosition).magnitude / Time.deltaTime;
 
@@ -182,7 +175,8 @@ public class CameraControl : MonoBehaviour {
 
                 //caluate zoom (displacement from orbit point)
                 {
-                    zoom = Mathf.Lerp(zoom, Mathf.LerpUnclamped(zoomDistanceMin, zoomDistanceMax, followTargetSpeed / 100), Time.deltaTime * 10);
+                    float targetZoom = Mathf.LerpUnclamped(zoomDistanceMin, zoomDistanceMax, followTargetSpeed / 100);
+                    zoom = Mathf.Lerp(zoom, targetZoom, Time.deltaTime * 10);
 
                     //check for wall intersection         
                     if(!clippingAllowed)
@@ -196,9 +190,8 @@ public class CameraControl : MonoBehaviour {
                 }
                    
                 //set camera position                                       
-                {
-                    float disable = Mathf.Clamp01(Time.time / 10);
-                    transform.position = orbitPoint - (targetRotation * Vector3.forward * zoom);
+                {                 
+                    transform.position = orbitPoint - (targetRotation * Vector3.forward * (zoom - .2f));
                 }    
 
             }
@@ -244,7 +237,10 @@ public class CameraControl : MonoBehaviour {
 
                 //Set targeting reticle to target location
                 if (targets[trackIndexPosition] != null)
-                    targetingReticle.position = targets[trackIndexPosition].transform.position;                               
+                {                     
+                    cameraTargetingPosition = targets[trackIndexPosition].transform.position;
+                    characterTargetingPosition = transform.position + transform.forward * 4000; 
+                }
             }
             else
             {
@@ -259,14 +255,15 @@ public class CameraControl : MonoBehaviour {
                 trackLerpScale = Mathf.Lerp(trackLerpScale * disableTracking, 0, Time.deltaTime * 2);
             }          
 
-            if (!tracking && targetingReticle != null)
-            {                               
-                //targetingReticle.position = transform.position + transform.forward * 40;
+            if (!tracking)
+            { 
+                if(targets[trackIndexPosition] != null)
+                characterTargetingPosition = transform.position + transform.forward * 40;
             }
 
             {
-                //Track camera to targeting reticle    
-                targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation((targetingReticle.position - transform.position).normalized, targetRotation * Vector3.up), trackLerpScale);
+                //Track camera to targeting position    
+                targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation((cameraTargetingPosition - transform.position).normalized, targetRotation * Vector3.up), trackLerpScale);
             }
         }
 
@@ -276,18 +273,22 @@ public class CameraControl : MonoBehaviour {
         }
 
         //Apply Rotation
-        transform.rotation = targetRotation * Shake(shakeMagnatude);       
+        transform.rotation = targetRotation * ReturnShake(1, shakeMagnatude) * ReturnShake( .01f, 1f);       
           
     }
 
-    Quaternion Shake(float magnatude)
+    Quaternion ReturnShake(float frequency, float magnatude)
     {     
-        return Quaternion.Euler(GetNoise(1) * magnatude, GetNoise(10) * magnatude, GetNoise(0) * magnatude);                                 
+        return Quaternion.Euler(GetNoise(shakeTime * frequency) * magnatude);   
+        
     }
 
-    float GetNoise(float seed)
+    Vector3 GetNoise(float position)
     {
-        return (Mathf.PerlinNoise(seed, shakeTime) - .5f) * 2;
+        return new Vector3(
+            (Mathf.PerlinNoise(1, position) - .5f) * 2,
+            (Mathf.PerlinNoise(10, position) - .5f) * 2,
+            (Mathf.PerlinNoise(0, position) - .5f) * 2);        
     }
 }
 

@@ -21,7 +21,7 @@ public class FadeScreen : MonoBehaviour
             float dist = Mathf.Abs(target - alpha);
             if (dist > Time.deltaTime)
             {
-                alpha = Mathf.Clamp01(alpha + dir * Time.deltaTime);
+                alpha = Mathf.Clamp01(alpha + dir * Time.deltaTime * .5f);
             }
             else
             {

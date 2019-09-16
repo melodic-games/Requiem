@@ -15,7 +15,7 @@ public class BlackBorder : MonoBehaviour
 
     private void Update()
     {
-
+       
         if (Input.GetAxisRaw("Focus") == 1)
             target = 1;
         else
@@ -42,8 +42,10 @@ public class BlackBorder : MonoBehaviour
     {
         if(image != null)
         {
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, height * scale), image);
-            GUI.DrawTexture(new Rect(0, Screen.height, Screen.width, -height * scale), image);
+            float forceEnable = 1 - Mathf.Clamp01(Time.time / 2);
+
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, height * Mathf.Clamp01(scale + forceEnable)), image);
+            GUI.DrawTexture(new Rect(0, Screen.height, Screen.width, -height * Mathf.Clamp01(scale + forceEnable)), image);
         }
     }
 }

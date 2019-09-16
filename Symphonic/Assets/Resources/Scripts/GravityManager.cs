@@ -13,6 +13,9 @@ public class GravityManager : MonoBehaviour
     public Vector3 sceneGravity = new Vector3(0, -9.81f, 0);
     public bool sceneGravityUpdatesHere = true;
 
+    public float maxObjectGravity = 10;
+
+
     void Awake()
     {
 
@@ -34,7 +37,7 @@ public class GravityManager : MonoBehaviour
             {
                 float radius = obj.GetComponent<MeshRenderer>().bounds.extents.x;
                 
-                GravitySource gS = new GravitySource(obj.transform.position, Mathf.Pow(radius,2) * 10, Mathf.Infinity);
+                GravitySource gS = new GravitySource(obj.transform.position, Mathf.Pow(radius,2) * 10, Mathf.Infinity, 0);
                 gravitySources.Add(gS);
                 gS.trackingTransform = obj.transform;
             }
@@ -43,7 +46,7 @@ public class GravityManager : MonoBehaviour
             {
                 float radius = obj.GetComponent<MeshRenderer>().bounds.extents.x;
 
-                GravitySource gS = new GravitySource(obj.transform.position, Mathf.Pow(radius, 2) * -10, Mathf.Infinity);
+                GravitySource gS = new GravitySource(obj.transform.position, Mathf.Pow(radius, 2) * -10, Mathf.Infinity, 0);
                 gravitySources.Add(gS);
                 gS.trackingTransform = obj.transform;
             }
@@ -71,7 +74,16 @@ public class GravityManager : MonoBehaviour
         foreach (GravitySource gs in gravitySources)
         {
             if (gs.trackingTransform != null)
+            {
                 gs.position = gs.trackingTransform.position;
+                gs.rotation = gs.trackingTransform.rotation;
+            }
+
+            if (Time.time > gs.creationTime + gs.durationTime + gs.decayTime)
+            {
+               // gravitySources.Remove(gs);
+            }
+
         }
     }
 
@@ -84,9 +96,41 @@ public class GravityManager : MonoBehaviour
 
         foreach (GravitySource gs in gravitySources)
         {
-            if (gs.trackingTransform != mytransform)               
-            //add case statement here for different gravity types
-            objectGravity += gs.mass / Vector3.SqrMagnitude(mytransform.position - gs.position) * (gs.position - mytransform.position).normalized;//sphearical gravity           
+            if (gs.trackingTransform != mytransform)
+            {
+
+                gs.durationScaler = Mathf.Lerp(1,0,Mathf.InverseLerp(gs.durationTime + gs.creationTime, gs.durationTime + gs.creationTime + gs.decayTime, Time.time));
+
+                //Switch for different gravity types
+
+                switch (gs.type)
+                {
+                    default:
+                        Debug.LogError("No Gravity Type Specified. Reverting to default.");
+                        gs.type = GravityType.Spherical;
+                        goto case GravityType.Spherical;                       
+                    case GravityType.Spherical:  
+                        objectGravity += Mathf.Min(gs.mass / Vector3.SqrMagnitude(mytransform.position - gs.position), maxObjectGravity) * (gs.position - mytransform.position).normalized * gs.durationScaler;
+                        break;
+                    case GravityType.Planar:
+                        break;
+                    case GravityType.Radial:
+                        
+                        Vector3 dir = Vector3.down;
+
+                        if (gs.trackingTransform != null)
+                        {
+                            RaycastHit hit;
+                            Physics.Raycast(transform.position, -gs.trackingTransform.transform.up, out hit, 1000, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore);
+                            dir = -hit.normal;
+                        }
+                                               
+                        objectGravity +=  dir * 10 * gs.durationScaler;
+                        break;
+                    case GravityType.Cylindrical:
+                        break;                    
+                }                       
+            }
         }
 
         //Cancel out Scene gravity when object gravity magnitude is the same size or bigger.       
