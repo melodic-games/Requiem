@@ -8,9 +8,8 @@ public class CameraControl : MonoBehaviour {
     [Header("Target Information")]    
     public Vector3 characterTargetingPosition = Vector3.zero;
     public Vector3 cameraTargetingPosition = Vector3.zero;
-    public GameObject[] targets;
-    public int followIndexPosition = 0;
-    public int trackIndexPosition = 1;
+    public Transform[] followTargets;
+    public Transform[] trackTargets;
     public bool followingTarget = true;
     public bool tracking = true;
 
@@ -70,8 +69,8 @@ public class CameraControl : MonoBehaviour {
        
         targetRotation = transform.rotation;       
 
-        if (targets[followIndexPosition] == null)
-            targets[followIndexPosition] = GameObject.FindGameObjectWithTag("Player");
+        if (followTargets[0] == null)
+            followTargets[0] = GameObject.FindGameObjectWithTag("Player").transform;
         
             orbitPoint = transform.position - transform.forward * 2;
 
@@ -109,6 +108,7 @@ public class CameraControl : MonoBehaviour {
         }
       
         //record mouse and gamepad input
+        if (Time.time > 1)
         {
             mouseMovement.x = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
             mouseMovement.y = -Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
@@ -147,22 +147,34 @@ public class CameraControl : MonoBehaviour {
         if (followingTarget)       
         {
             rb.isKinematic = true;
+
+            Vector3 followPosAverage = Vector3.zero;
+
+            //Get the average position between targets
+            {
+                int count = 0;
+                foreach (Transform t in followTargets)
+                {
+                    followPosAverage += t.position;
+                    count += 1;
+                }
+                followPosAverage /= count;
+            }
+
             
-            //If we have a target to follow
-            if (targets[followIndexPosition] != null)
             {
                 float followTargetSpeed = 0;
 
                 if (Time.deltaTime > 0)
                 {
-                    followTargetSpeed = (targets[followIndexPosition].transform.position - followPreviousPosition).magnitude / Time.deltaTime;
+                    followTargetSpeed = (followPosAverage - followPreviousPosition).magnitude / Time.deltaTime;
 
-                    followPreviousPosition = targets[followIndexPosition].transform.position;
+                    followPreviousPosition = followPosAverage;
                 }
 
                 //set camera orbitpoint position                                       
                 {                   
-                    orbitPoint = Vector3.Lerp(orbitPoint, targets[followIndexPosition].transform.position + targetRotation * localOffset, Time.deltaTime * lerpSpeed);
+                    orbitPoint = Vector3.Lerp(orbitPoint, followPosAverage + targetRotation * localOffset, Time.deltaTime * lerpSpeed);
                 }
 
                 //caluate zoom (displacement from orbit point)
@@ -211,7 +223,7 @@ public class CameraControl : MonoBehaviour {
                 {
                     if (hit.transform.gameObject.tag == "Trackable")
                     {
-                        targets[trackIndexPosition] = hit.transform.gameObject;
+                        trackTargets[0] = hit.transform;
                         tracking = true;
                     }
                 }
@@ -224,39 +236,48 @@ public class CameraControl : MonoBehaviour {
 
         //Object Tracking
         {
+
+            Vector3 trackPosAverage = Vector3.zero;
+
+            //Get the average position between targets
+            {
+                int count = 0;
+                foreach (Transform t in trackTargets)
+                {
+                    trackPosAverage += t.position;
+                    count += 1;
+                }
+                trackPosAverage /= count;
+            }
+
             //scale value on tracking lerp
             if (tracking)
             {
                 trackLerpScale = Mathf.Lerp(trackLerpScale,1,Time.deltaTime * 1);//smoothly enable tracking.     
 
                 //Set targeting reticle to target location
-                if (targets[trackIndexPosition] != null)
-                {
-                    characterTargetingPosition = targets[trackIndexPosition].transform.position;              
-                    cameraTargetingPosition = targets[trackIndexPosition].transform.position;              
+                if (trackTargets[0] != null)
+                {                                  
+                    cameraTargetingPosition = trackPosAverage;              
                 }
-                else
-                {
-                    characterTargetingPosition = transform.position + transform.forward * 4000;
-                }
+
             }
             else
             {
-                //disable quickly removes any trackLerpScale when the player atempts to rotate the camera on their own.
-                
+                // quickly removes any trackLerpScale when the player atempts to rotate the camera on their own.                
                 disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Horizontal2") * 4));
                 disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Vertical2") * 4));
                 disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse X") * 4));
                 disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse Y") * 4));
-           
-                //smoothly disable tracking, but allow the player to turn it off fast.
+
+                //smoothly disable tracking, but allow the player to turn it off fast with "disableTracking".
                 trackLerpScale = Mathf.Lerp(trackLerpScale * disableTracking, 0, Time.deltaTime * 2);
             }          
 
-            if (!tracking)
+            //Character Object Tracking
             { 
-                if(targets[trackIndexPosition] != null)
-                    characterTargetingPosition = targets[trackIndexPosition].transform.position;
+                if(trackTargets[0] != null)
+                    characterTargetingPosition = trackPosAverage;
                 else
                     characterTargetingPosition = transform.position + transform.forward * 40;
             }

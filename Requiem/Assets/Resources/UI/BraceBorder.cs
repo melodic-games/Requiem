@@ -1,9 +1,8 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+
 
 public class BraceBorder : MonoBehaviour
 {
-
     public Texture image;
     [Range(0, 1)]
     public float scale = 1;
@@ -14,15 +13,13 @@ public class BraceBorder : MonoBehaviour
 
     public float displacement;
 
-
     private void Update()
     {
-       
+              
         if (Input.GetAxisRaw("Focus") == 1)
             target = 1;
         else
             target = 0;
-
         
         {            
             float dir = Mathf.Sign(target - scale);
@@ -36,7 +33,6 @@ public class BraceBorder : MonoBehaviour
                 scale = target;
             }
         }
-
         
     }
 
@@ -44,15 +40,8 @@ public class BraceBorder : MonoBehaviour
     {
         if(image != null)
         {
-
-            float displacement = height * (1-scale);  
-
-            Rect rect1 = new Rect(0, - displacement + height, Screen.width, -height);
-            displacement = height * scale; 
-            Rect rect2 = new Rect(0, Screen.height - displacement, Screen.width, height);
-
-            GUI.DrawTexture(rect1, image);
-            GUI.DrawTexture(rect2, image);
+            GUI.color = new Color(1,1,1,scale);
+            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), image);            
         }
     }
 }

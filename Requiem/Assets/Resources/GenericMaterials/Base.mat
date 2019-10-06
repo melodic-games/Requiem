@@ -185,7 +185,7 @@ Material:
     - _IridescenceThickness: 1
     - _LinkDetailsWithBase: 1
     - _MaterialID: 1
-    - _Metallic: 0
+    - _Metallic: 1
     - _NormalMapSpace: 0
     - _NormalScale: 1
     - _PPDLodThreshold: 5
@@ -199,7 +199,7 @@ Material:
     - _ShellPower: 7.5
     - _ShiverDirectionality: 0.5
     - _ShiverDrag: 0.2
-    - _Smoothness: 0.7
+    - _Smoothness: 0.5
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0
     - _SpecularAAScreenSpaceVariance: 0.1
@@ -240,8 +240,8 @@ Material:
     - _BaseColor: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
-    - _Color1: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
-    - _Color2: {r: 0.37339208, g: 0.4444053, b: 0.52, a: 1}
+    - _Color1: {r: 0.0050264318, g: 0.0059823785, b: 0.0069999998, a: 1}
+    - _Color2: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
     - _DiffusionProfileAsset: {r: 0, g: 0, b: 0, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
