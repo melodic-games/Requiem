@@ -44,7 +44,7 @@ public class SymphonicBehaviour : MonoBehaviour {
     private float dashTime = 0;
     [SerializeField] private float dashLength = .2f;
     [SerializeField] private float dashInterupt = .05f;
-    [SerializeField] private float dashWindup = .02f;
+    //[SerializeField] private float dashWindup = .02f;
     private bool accelerator = false;
     private float acceleratorTime = 0;
     [SerializeField] private float acceleratorWindup = 3;
@@ -63,7 +63,7 @@ public class SymphonicBehaviour : MonoBehaviour {
     [SerializeField] private float airTopSpeedBase = 180;
     
     private float charging = 0;
-    [SerializeField] private float emissionColorIndex;
+    //[SerializeField] private float emissionColorIndex;
 
     private Vector3 camLocalOffset = Vector3.zero;
     [SerializeField] private float camZoomDistanceMin = 4;
@@ -236,11 +236,11 @@ public class SymphonicBehaviour : MonoBehaviour {
            
             //Set color of body and emission materials          
             {
-                Vector4 color;
+                Vector4 color = Color.white;
                 
                 //Calulate color from index
                 {
-                   color = SignatureColors.colors[(int) emissionColorIndex];
+                   //color = SignatureColors.colors[(int) emissionColorIndex];
                 }
 
                 foreach (Material material in bodyMaterials)

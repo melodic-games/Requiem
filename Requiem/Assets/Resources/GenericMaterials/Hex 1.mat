@@ -75,9 +75,9 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - Color_394F0D69: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
+    - Color_394F0D69: {r: 0.34682378, g: 0.41278413, b: 0.48299998, a: 1}
     - Color_AE6930B4: {r: 9.082411, g: 0.7568676, b: 0, a: 1}
     - Vector2_2AC04287: {r: 0.04, g: 1, b: 0, a: 0}
-    - _Color: {r: 2.66e-42, g: 9.61e-43, b: 0, a: 1.163e-42}
+    - _Color: {r: 0, g: 0, b: 0, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}

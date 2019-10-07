@@ -98,7 +98,7 @@ public class SymEffectControl : MonoBehaviour
         if (speedAlongContactNormal > 20)
         {
             ExplodeAtPosition(collision.contacts[0].point + collision.contacts[0].normal);
-            collision.gameObject.SendMessage("Emit");
+            //collision.gameObject.SendMessage("Emit");
         }
     }
 

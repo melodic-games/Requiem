@@ -56,11 +56,21 @@ public class SymIKHandler : MonoBehaviour
     }
 
     void OnAnimatorIK()
-    {        
+    {       
+        //Main
         {
             float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);
             animator.SetLookAtWeight(t, .2f, .8f, 1, .5f);
             animator.SetLookAtPosition(cameraControl.characterTargetingPosition);
+        }
+
+        //Foot IK
+        {
+            //animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
+            //animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
+
+            //animator.SetIKPosition(AvatarIKGoal.LeftFoot, leftFootPosition);
+            //animator.SetIKPosition(AvatarIKGoal.RightFoot, rightFootPosition);
         }
     }
 }

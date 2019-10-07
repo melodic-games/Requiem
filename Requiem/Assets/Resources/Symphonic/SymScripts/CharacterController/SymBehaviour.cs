@@ -32,10 +32,20 @@ public class SymBehaviour : MonoBehaviour
     public float energyLevel = 0f;
     public bool chargingEnergy = false;
     public bool flightEnabled = false;
-    public float emissionColorIndex;
+    public float wallWalkScaler = 0;
+    //Ground Raycast
+    public bool groundCheck;
+    public RaycastHit groundHit;
+    //CoyoteTime
+    public bool useCoyoteTime = false;
+    public float coyoteTime = 0;
+    public float coyoteTimeMax = .2f;
+    //Landing
     public float landingType = 0;
     public float landingLag = 100;
     public float landingLagMax = 2;
+    //Locomotion
+    public bool locomotionInputInterupt = false;
 
     //Physics   
     public float rbVelocityMagnatude;
@@ -75,7 +85,6 @@ public class SymBehaviour : MonoBehaviour
         phyMat = Resources.Load<PhysicMaterial>("Symphonic/PhyMatSymphonic");
         capsuleCollider.material = phyMat;
 
-
         gravityManager = FindObjectOfType<GravityManager>();
         rb.maxAngularVelocity = 20;
 
@@ -102,20 +111,17 @@ public class SymBehaviour : MonoBehaviour
             CreateStateMachine();
         }
 
-        controlSource.CollectInput();
-
-        if (controlSource.jump && controlSource.crouching && controlSource.thrustInput == 1 && energyLevel == 1)
-        {
-            stateMachine.ChangeModule(SymFlightModule.Instance);
-            rb.velocity = transform.up * rbVelocityMagnatude;
-            flightEnabled = true;
-            grounded = false;
-        }
+        controlSource.CollectInput();        
 
         //increment landing lag
         if (grounded)
         {
             landingLag += Time.deltaTime;
+        }
+
+        //Send camera helper data
+        {
+            cameraHelper.manualUpVectorScaler = wallWalkScaler;
         }
 
         stateMachine.Update();
@@ -134,7 +140,7 @@ public class SymBehaviour : MonoBehaviour
 
     private void FixedUpdate()
     {
-              
+
         //Gravity Calulation    
         {
             //reset gravity disable
@@ -150,9 +156,70 @@ public class SymBehaviour : MonoBehaviour
             {
                 gravity = Vector3.Lerp(gravity, Vector3.zero, Time.deltaTime);
             }
-        }        
 
-        //Move the character
+            //Gravity redirection from wall walking
+            {
+                if (wallWalkScaler == 1 && grounded)
+                    gravity = gravity.magnitude * -groundNormal;
+            }
+
+        }
+                       
+        //Coyote Time Update
+        if (useCoyoteTime)
+        {
+            //if we have exausted our coyoteTime we are no longer grounded and should fall
+            if (coyoteTime > coyoteTimeMax)
+            {
+                grounded = false;
+                useCoyoteTime = false;
+                coyoteTime = 0;
+                wallWalkScaler = 0;
+            }
+
+            //Increment CoyoteTime
+            {           
+                coyoteTime += Time.deltaTime;
+            }
+
+            //CoyoteTime disables gravity while in use
+            {
+                if (coyoteTime <= coyoteTimeMax && grounded)
+                    enableGravity = 0;
+            }
+        }
+
+        Debug.DrawRay(transform.position, new Ray(transform.position, Vector3.Lerp(gravity, gravity.magnitude * -groundNormal, wallWalkScaler)).direction * (playerHeight * .5f + .1f));
+
+        //Grab Surface Data
+        groundCheck = Physics.Raycast(new Ray(transform.position, Vector3.Lerp(gravity, gravity.magnitude * -groundNormal, wallWalkScaler)),
+                 out groundHit, playerHeight, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide);
+
+        //Check to make sure we have not left the ground
+        if (grounded)
+        {           
+            if (groundCheck)
+            {
+                groundNormal = groundHit.normal;
+                coyoteTime = 0;
+                useCoyoteTime = false;
+            }
+            else
+            {
+                useCoyoteTime = true;
+            }
+
+        }
+
+        //Calulate Generic Locomotion Interupts
+        { 
+            locomotionInputInterupt = false;
+
+            if (landingLag < landingLagMax)
+                locomotionInputInterupt = true;
+        }
+
+        //Run Locomotion Portion of Module
         {
             stateMachine.Locomotion();
         }
@@ -172,22 +239,25 @@ public class SymBehaviour : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
 
-        groundNormal = collision.GetContact(0).normal;     
+        groundNormal = collision.GetContact(0).normal;
+
+        //Reset Landing Type
         landingType = 0;
         
         //Land hard if conditions are right
-        if (Mathf.Abs(Vector3.Dot(rbVelocityNormalized, groundNormal)) > 0.85f && rbVelocityMagnatude > 40)
-        {                        
-            landingLag = 0;
-            landingType = 1;
-            rb.velocity = Vector3.zero;          
-        }
+        if (Vector3.Dot(rbVelocityNormalized, groundNormal) < -0.85f && rbVelocityMagnatude > 40) { landingLag = 0; landingType = 1; rb.velocity = Vector3.zero; }
 
         //Calulate ground speed relative to the collission surface (needed for some modules)
         traversalSpeed = rbVelocityMagnatude * (1 - Mathf.Abs(Vector3.Dot(rbVelocityNormalized, -groundNormal)));
 
         //Run Module Specific Collission 
         stateMachine.CollissionEnter(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        //Run Module Specific Collission 
+        stateMachine.CollissionStay(collision);
     }
 
 

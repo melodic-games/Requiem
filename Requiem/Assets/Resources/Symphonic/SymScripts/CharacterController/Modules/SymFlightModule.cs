@@ -19,10 +19,10 @@ public class SymFlightModule : Module<SymBehaviour>
     //Input Data
     private float rollAxisInput = 0;
     private float pitchAxisInput = 0;
-    private float yawAxisInput = 0;
+    //private float yawAxisInput = 0;
 
     private float thrustInput = 0;
-    private bool thrustInputAsButtion = false;
+    //private bool thrustInputAsButtion = false;
 
     private float bounceBuffer = Mathf.Infinity;
     private float bounceBufferMax = .5f;
@@ -56,6 +56,7 @@ public class SymFlightModule : Module<SymBehaviour>
 
     public override void EnterModule(SymBehaviour owner)
     {
+        owner.flightEnabled = true;
         heading = Camera.main.transform.forward;
         bounceBuffer = bounceBufferMax;
         owner.rb.angularDrag = 5;        
@@ -69,6 +70,10 @@ public class SymFlightModule : Module<SymBehaviour>
             pitchAxisInput = owner.controlSource.pitchAxisInput;
             thrustInput = owner.controlSource.thrustInput;
             focusInput = owner.controlSource.focusInput;
+            if (owner.controlSource.bounce)
+            {
+                bounceBuffer = 0;
+            }
         }      
     }
 
@@ -174,13 +179,13 @@ public class SymFlightModule : Module<SymBehaviour>
 
         //Forward Acceleration  
         {
-            float calulatedBoost = 0;
+          
             //Player Activated Boost               
             {
                 owner.rb.velocity = Vector3.ClampMagnitude(owner.rb.velocity + forward * topSpeed * owner.energyLevel * thrustInput, topSpeed);
                 //Disable Charging           
                 if (thrustInput == 1)
-                if (owner.energyLevel == 1)
+                if (owner.energyLevel > .5)
                 {
                     float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
                     //Disable camera lerp when pushed back by a shockwave, but behind the character.                        
@@ -194,7 +199,7 @@ public class SymFlightModule : Module<SymBehaviour>
 
             //Diving downwards doubles acceleration base speed
             float diveBoost = flightAccelerationBase * Mathf.Clamp01(Vector3.Dot(forward, owner.gravity.normalized));
-            moveAcceleration = flightAccelerationBase + calulatedBoost + diveBoost;
+            moveAcceleration = flightAccelerationBase  + diveBoost;
 
             owner.rb.AddForce(forward * thrustInput * moveAcceleration, ForceMode.Acceleration);
         }
@@ -222,46 +227,43 @@ public class SymFlightModule : Module<SymBehaviour>
     }
 
 
-    public override void OnCollissionStay(SymBehaviour owner, Collision collision)
+    public override void OnCollisionStay(SymBehaviour owner, Collision collision)
     {
 
     }
-
 
     public override void OnCollisionEnter(SymBehaviour owner, Collision collision)
-    {
-        owner.groundNormal = collision.GetContact(0).normal;
-        owner.ExitCurrentModule();
-        owner.flightEnabled = false;
-        owner.grounded = true;
+    { 
+        //bounce if we pressed the jump button and will return to flight           
+        if (bounceBuffer <= bounceBufferMax && owner.flightEnabled)
+        {
+
+            bounceBuffer = Mathf.Infinity;
+
+            //Character Effects
+            {
+                //Find Reflection Vector
+                Vector3 reflect = Vector3.Reflect(owner.rbVelocityNormalized, owner.groundNormal);
+                //Reflect Velocity
+                owner.rb.velocity = reflect * owner.rbVelocityMagnatude;
+                //Cancel Angular Velocity Caused By Collission
+                owner.rb.angularVelocity = Vector3.zero;
+                //Reflect Orientation
+                owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, owner.rbVelocityNormalized), reflect), owner.groundNormal);
+            }
+
+            owner.cameraHelper.CameraBounce(collision);
+
+        }
+        else
+        {            
+            owner.ExitCurrentModule();
+            owner.flightEnabled = false;
+            owner.grounded = true;
+        }
     }
-    //public override void OnCollisionEnter(SymBehaviour owner, Collision collision)
-    //{      
-    //    Vector3 hitPoint = collision.GetContact(0).point;
-    //    Vector3 hitNormal = collision.GetContact(0).normal;
+    
 
-    //    //bounce if we pressed the jump button and will return to flight           
-    //    if (bounceBuffer <= bounceBufferMax && owner.flightEnabled)
-    //    {
-
-    //        bounceBuffer = Mathf.Infinity;
-
-    //        //Character Effects
-    //        {
-    //            //Find Reflection Vector
-    //            Vector3 reflect = Vector3.Reflect(owner.rbVelocityNormalized, hitNormal);
-    //            //Reflect Velocity
-    //            owner.rb.velocity = reflect * owner.rbVelocityMagnatude;
-    //            //Cancel Angular Velocity Caused By Collission
-    //            owner.rb.angularVelocity = Vector3.zero;
-    //            //Reflect Orientation
-    //            owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, owner.rbVelocityNormalized), reflect), hitNormal);
-    //        }
-
-    //        owner.cameraHelper.CameraBounce(collision);
-
-    //    }
-    //}
 
     public override void ExitModule(SymBehaviour owner)
     {

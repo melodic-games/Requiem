@@ -20,26 +20,19 @@ public class SymBaseModule : Module<SymBehaviour>
     private Vector3 lastVelocity;
 
     private float jumpPower = 10;
-
-    private bool locomotionInputInterupt = false;
-
+   
     private bool dashing = false;
     private float dashSpeed = 100;
     private float dashTime = 0;
     private float dashDuration = .2f;
     private float dashInterupt = .1f;
-    private float dashWindup = .02f;
+    //private float dashWindup = .02f;
 
     private bool accelerator = false;
     private float acceleratorTime = 0;
     private float acceleratorWindup = 3;
 
     public float traction = 1;
-    private float wallWalkScaler = 0;
-
-    private bool useCoyoteTime = false;
-    private float coyoteTime = 0;
-    private float coyoteTimeMax = .2f;
 
     //Airborn State
     private float angularAccelerationBase = 10;
@@ -93,7 +86,7 @@ public class SymBaseModule : Module<SymBehaviour>
 
             if (Vector3.Dot(owner.groundNormal, -owner.gravity.normalized) < .5f)
             {
-                wallWalkScaler = 1;
+                owner.wallWalkScaler = 1;
             }
 
             if (owner.traversalSpeed > 20)
@@ -153,45 +146,17 @@ public class SymBaseModule : Module<SymBehaviour>
     {
         
         //Passive adjustments and calulations 
-        {
+        {            
 
-            //Check to make sure we have not left the ground and grab surface data       
-            if (owner.grounded)
-            {                                                   
-                RaycastHit hit;
-                Ray raycastRay = new Ray(owner.transform.position, Vector3.Lerp(owner.gravity, owner.gravity.magnitude * -owner.groundNormal, wallWalkScaler));
-                //Debug.DrawRay(owner.transform.position, raycastRay.direction * (owner.playerHeight * .5f + .1f));
-                if (Physics.Raycast(raycastRay, out hit, owner.playerHeight, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Collide))
-                {
-                    owner.groundNormal = hit.normal;
-                    coyoteTime = 0;
-                    useCoyoteTime = false;
-                }
-                else
-                {
-                    if (!dashing)
-                        coyoteTime += Time.deltaTime;
-                    useCoyoteTime = true;
-                }
-
-                //if we have exausted our coyoteTime we are no longer grounded
-                if (coyoteTime > coyoteTimeMax)
-                {
-                    owner.grounded = false;                        
-                    wallWalkScaler = 0;
-                }
-
-                //CoyoteTime disables gravity
-                {
-                    if (coyoteTime < coyoteTimeMax && useCoyoteTime)
-                        owner.enableGravity = 0;
-                }           
+            //Calulate locomotion input interruption specific to this module
+            {
+                if (dashTime < dashInterupt && dashing)
+                    owner.locomotionInputInterupt = true;
             }
-            
-            //Ground adjustments and calulations
-            if (owner.grounded)
-            { 
 
+            //Grounded adjustments and calulations
+            if (owner.grounded)
+            {
                 //Reset angular drag
                 {
                     owner.rb.angularDrag = 1000;
@@ -204,6 +169,7 @@ public class SymBaseModule : Module<SymBehaviour>
                     Vector3 movez = Vector3.Cross(Camera.main.transform.right, owner.groundNormal);
                     Vector3 movex = -Vector3.Cross(Camera.main.transform.forward, owner.groundNormal);
 
+                    if (!owner.crouching)
                     moveDirectionRaw = Mathf.Clamp01(Mathf.Abs(verticalInput) + Mathf.Abs(horizontalInput)) * (movez * verticalInput + movex * horizontalInput).normalized;                                                         
                     
                     //Reset MoveDirection upon pulling in the other direction
@@ -218,7 +184,7 @@ public class SymBaseModule : Module<SymBehaviour>
 
                 //Wall walking enabled by speed
                 {
-                    wallWalkScaler = Mathf.Min(wallWalkScaler + Mathf.InverseLerp(20, 40, owner.rbVelocityMagnatude) * Time.deltaTime, 1);
+                    owner.wallWalkScaler = Mathf.Min(owner.wallWalkScaler + Mathf.InverseLerp(20, 40, owner.rbVelocityMagnatude) * Time.deltaTime, 1);
                 }
 
                 //Set Physics Material properties
@@ -235,46 +201,33 @@ public class SymBaseModule : Module<SymBehaviour>
                     }
                 }
 
-                //Send camera helper data
-                {
-                    owner.cameraHelper.manualUpVectorScaler = wallWalkScaler;                    
-                }
-
-                //Gravity redirection from wall walking
-                {
-                    owner.gravity = Vector3.Lerp(owner.gravity, owner.gravity.magnitude * -owner.groundNormal, wallWalkScaler);
-                }
-
-                //Set rotation on ground, and prevent rigidbody from tipping over                     
-                {        
-                    owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(owner.transform.right, owner.groundNormal), owner.groundNormal);
-                    if (!owner.crouching)
-                    owner.rb.angularVelocity = Vector3.zero;
-                }
-
                 //Input magnatude, used for checking if a player is pressing in a direction
                 {
                     moveDirectionMag = Mathf.Clamp01(Mathf.Abs(verticalInput) + Mathf.Abs(horizontalInput));
                 }
 
+                //Set rotation on ground, and prevent rigidbody from tipping over                     
+                {        
+                    owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(owner.transform.right, -owner.gravity), -owner.gravity);
+                    if (!owner.crouching)
+                    owner.rb.angularVelocity = Vector3.zero;
+                }
+
                 //Character faces the move direction or velocity direction                       
                 {                                  
-                    if (moveDirectionMag > .1f && !locomotionInputInterupt)
+                    if (moveDirectionMag > .1f && !owner.locomotionInputInterupt)
                     {
+                        Debug.Log("test");
                         if (!owner.crouching)
                             owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(moveDirection, owner.groundNormal), Time.deltaTime * 5);
                     }
-                    else if (owner.rbVelocityMagnatude > 1 & moveDirectionMag < .1f)
-                    {
-                        float scale = Mathf.InverseLerp(5, 10, owner.rbVelocityMagnatude) * 5;
-                        owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(owner.rbVelocityNormalized, owner.groundNormal), Time.deltaTime * scale);
-                    }                
+             
                 }
 
                 //Calulate Traction
                 {
-                    traction = Mathf.Clamp01(Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, owner.transform.forward)) + .2f);
-                    if (owner.crouching) traction = .2f;
+                    traction = Mathf.Clamp01(Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, owner.transform.forward)) + .5f);
+                    if (owner.crouching) traction = 1f;
                 }
 
                 //canRun reset
@@ -307,17 +260,6 @@ public class SymBaseModule : Module<SymBehaviour>
                     }
                 }
 
-                //calulate locomotion input interruption
-                {
-                    locomotionInputInterupt = false;
-
-                    if (dashTime < dashInterupt && dashing)
-                        locomotionInputInterupt = true;
-
-                    if (owner.landingLag < owner.landingLagMax)
-                        locomotionInputInterupt = true;
-                }
-
                 //DashTime update
                 {
                     //Increment dashTime
@@ -334,7 +276,7 @@ public class SymBaseModule : Module<SymBehaviour>
                     }
 
                     //Allow the player to cancel a dash early if needed
-                    if (dashing && !locomotionInputInterupt && moveDirectionMag == 0)
+                    if (dashing && !owner.locomotionInputInterupt && moveDirectionMag == 0)
                     {
                         dashing = false;
                         dashTime = 0;
@@ -438,7 +380,7 @@ public class SymBaseModule : Module<SymBehaviour>
             //Dash      
             if (owner.energyLevel == 1)
             {
-                if (!locomotionInputInterupt)
+                if (!owner.locomotionInputInterupt)
                     if (dashBuffer <= dashBufferMax)
                     {
                         dashBuffer = Mathf.Infinity;
@@ -459,7 +401,7 @@ public class SymBaseModule : Module<SymBehaviour>
                             acceleratorTime = acceleratorWindup;
                             accelerator = true;
                             topSpeed = dashSpeed;
-                            locomotionInputInterupt = true;
+                            owner.locomotionInputInterupt = true;
                             owner.SendMessage("Explode");
                         }
 
@@ -474,19 +416,22 @@ public class SymBaseModule : Module<SymBehaviour>
             }
 
             //Jumping.
-            if (!locomotionInputInterupt)
+            if (!owner.locomotionInputInterupt)
                 if (jumpBuffer < jumpBufferMax)
                 {                   
                     jumpBuffer = Mathf.Infinity;
                     owner.grounded = false;                    
                     owner.rb.velocity += owner.groundNormal * jumpPower;
                     owner.animator.SetTrigger("Jump");
-                    wallWalkScaler = 0;
-                    coyoteTime = coyoteTimeMax;
+                    owner.wallWalkScaler = 0;
+                    owner.coyoteTime = owner.coyoteTimeMax;
+                    owner.verticalSpeed = owner.rb.velocity.magnitude * Vector3.Dot(owner.rb.velocity.normalized, -owner.gravity.normalized);
+                    if (owner.energyLevel == 1)                    
+                        owner.stateMachine.ChangeModule(SymFlightModule.Instance);                                                                  
                 }
 
             //Ground Top Speed Control
-            if (!locomotionInputInterupt)
+            if (!owner.locomotionInputInterupt)
             {
                 if (accelerator)
                 {
@@ -514,7 +459,7 @@ public class SymBaseModule : Module<SymBehaviour>
             }
 
             //Forward Acceleration on ground
-            if (!locomotionInputInterupt && !owner.crouching)
+            if (!owner.locomotionInputInterupt && !owner.crouching)
             {
                 owner.rb.AddForce(moveDirection * moveAcceleration * traction, ForceMode.Acceleration);
             }
@@ -531,7 +476,7 @@ public class SymBaseModule : Module<SymBehaviour>
             }
 
             //Grip force
-            if (!locomotionInputInterupt)
+            if (!owner.locomotionInputInterupt)
             {                
                 Vector3 force = SymUtils.RedirectForce(moveDirection, owner.rbVelocityNormalized, owner.rbVelocityMagnatude, traction);
                 owner.rb.AddForce(force * 5 , ForceMode.Acceleration);
@@ -568,34 +513,19 @@ public class SymBaseModule : Module<SymBehaviour>
             }
         }
     
-    }
-
-    public override void OnCollissionStay(SymBehaviour owner, Collision collision)
-    {
-        if (!owner.grounded)
-        {
-            owner.grounded = true;
-        }
-        else
-        {
-            //Stair Steping
-            //allCPs.AddRange(collision.contacts);
-        }
-        
-    }
+    }    
 
     public override void OnCollisionEnter(SymBehaviour owner, Collision collision)
     {
-            
-        if (!owner.grounded)
-        {                                
+        if (!owner.grounded && Mathf.Sign(owner.verticalSpeed) == -1)
+        {
             //Character Effects            
             owner.grounded = true;
 
             //Check if we should ground the character normally, or if the character should stick to walls
-            if (Vector3.Dot(owner.groundNormal, -owner.gravity.normalized) < .5f && owner.energyLevel  == 1)
+            if (Vector3.Dot(owner.groundNormal, -owner.gravity.normalized) < .5f && owner.energyLevel == 1)
             {
-                wallWalkScaler = 1;
+                owner.wallWalkScaler = 1;
             }
 
             //Adjust accelerator 
@@ -606,16 +536,29 @@ public class SymBaseModule : Module<SymBehaviour>
                     acceleratorTime = acceleratorWindup;
                 }
 
-                topSpeed = Mathf.Max(owner.traversalSpeed,groundTopSpeedBase);
+                topSpeed = Mathf.Max(owner.traversalSpeed, groundTopSpeedBase);
                 owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(owner.transform.right, -owner.gravity), -owner.gravity);
             }
-                                              
-        }
-        else
-        {
-            //Stair Steping
-            //allCPs.AddRange(collision.contacts);
 
+        }
+
+    }
+
+    public override void OnCollisionStay(SymBehaviour owner, Collision collision)
+    {
+       
+        if (!owner.grounded && owner.groundCheck)
+            if (Mathf.Sign(owner.verticalSpeed) == -1 || Mathf.Sign(owner.verticalSpeed) == 0)
+        {
+            //Character Effects            
+            owner.grounded = true;
+
+            //Check if we should ground the character normally, or if the character should stick to walls
+            if (Vector3.Dot(owner.groundNormal, -owner.gravity.normalized) < .5f && owner.energyLevel == 1)
+            {
+                owner.wallWalkScaler = 1;
+            }
+       
         }
 
     }
@@ -629,7 +572,5 @@ public class SymBaseModule : Module<SymBehaviour>
         accelerator = false;
         jumpBuffer = jumpBufferMax;
     }
-
-
 
 }

@@ -38,6 +38,12 @@ namespace SymBehaviourModule
                 currentModule.OnCollisionEnter(Owner, collision);
         }
 
+        public void CollissionStay(Collision collision)
+        {
+            if (currentModule != null)
+                currentModule.OnCollisionStay(Owner, collision);
+        }
+
     }
 
     public abstract class Module<T>
@@ -49,9 +55,9 @@ namespace SymBehaviourModule
 
         public abstract void Locomotion(T owner);
 
-        public abstract void OnCollissionStay(T owner, Collision collision);
-
         public abstract void OnCollisionEnter(T owner, Collision collision);
+
+        public abstract void OnCollisionStay(T owner, Collision collision);
 
         public abstract void ExitModule(T owner);
     }

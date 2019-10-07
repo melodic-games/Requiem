@@ -261,8 +261,6 @@ namespace SplineMesh {
                                 while (distOnSpline > spline.Length) {
                                     distOnSpline -= spline.Length;
                                 }
-                            } else if (distOnSpline > spline.Length) {
-                                continue;
                             }
                             sample = spline.GetSampleAtDistance(distOnSpline);
                         }
