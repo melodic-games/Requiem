@@ -156,7 +156,7 @@ MonoBehaviour:
   active: 1
   m_AdvancedMode: 0
   rotation:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0
     min: 0
     max: 360
@@ -190,6 +190,82 @@ MonoBehaviour:
   hdriSky:
     m_OverrideState: 1
     m_Value: {fileID: 8900000, guid: a3bf2b406bc03da48b1143a28afb6a3b, type: 3}
+--- !u!114 &-1219843488644078496
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3df29e7cc05fbec4aa43e06ea875565d, type: 3}
+  m_Name: ProceduralSky
+  m_EditorClassIdentifier: 
+  active: 1
+  m_AdvancedMode: 0
+  rotation:
+    m_OverrideState: 0
+    m_Value: 0
+    min: 0
+    max: 360
+  skyIntensityMode:
+    m_OverrideState: 0
+    m_Value: 0
+  exposure:
+    m_OverrideState: 0
+    m_Value: 0
+  multiplier:
+    m_OverrideState: 0
+    m_Value: 1
+    min: 0
+  upperHemisphereLuxValue:
+    m_OverrideState: 0
+    m_Value: 1
+    min: 0
+  desiredLuxValue:
+    m_OverrideState: 0
+    m_Value: 20000
+  updateMode:
+    m_OverrideState: 0
+    m_Value: 0
+  updatePeriod:
+    m_OverrideState: 0
+    m_Value: 0
+    min: 0
+  includeSunInBaking:
+    m_OverrideState: 0
+    m_Value: 0
+  sunSize:
+    m_OverrideState: 0
+    m_Value: 0.04
+    min: 0
+    max: 1
+  sunSizeConvergence:
+    m_OverrideState: 0
+    m_Value: 5
+    min: 1
+    max: 10
+  atmosphereThickness:
+    m_OverrideState: 0
+    m_Value: 1
+    min: 0
+    max: 5
+  skyTint:
+    m_OverrideState: 0
+    m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    hdr: 0
+    showAlpha: 1
+    showEyeDropper: 1
+  groundColor:
+    m_OverrideState: 0
+    m_Value: {r: 0.369, g: 0.349, b: 0.341, a: 1}
+    hdr: 0
+    showAlpha: 1
+    showEyeDropper: 1
+  enableSunDisk:
+    m_OverrideState: 0
+    m_Value: 1
 --- !u!114 &-86121836167746543
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -206,21 +282,21 @@ MonoBehaviour:
   m_AdvancedMode: 0
   colorMode:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   color:
     m_OverrideState: 1
-    m_Value: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    m_Value: {r: 0, g: 0, b: 0, a: 1}
     hdr: 1
     showAlpha: 0
     showEyeDropper: 1
   density:
     m_OverrideState: 1
-    m_Value: 0.441
+    m_Value: 1
     min: 0
     max: 1
   maxFogDistance:
-    m_OverrideState: 0
-    m_Value: 5000
+    m_OverrideState: 1
+    m_Value: 0
     min: 0
   mipFogMaxMip:
     m_OverrideState: 0
@@ -237,7 +313,7 @@ MonoBehaviour:
     min: 0
   fogDistance:
     m_OverrideState: 1
-    m_Value: 100
+    m_Value: 1
     min: 0
   fogBaseHeight:
     m_OverrideState: 1
@@ -277,7 +353,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4bff652df78c97c4f963064ad1f34619, type: 3}
   m_Name: ColorCurves
   m_EditorClassIdentifier: 
-  active: 0
+  active: 1
   m_AdvancedMode: 0
   master:
     m_OverrideState: 0
@@ -332,8 +408,8 @@ MonoBehaviour:
         - serializedVersion: 3
           time: 0.49028078
           value: 0.49321264
-          inSlope: -1.7458521
-          outSlope: -1.7458521
+          inSlope: -6.9647183
+          outSlope: -6.9647183
           tangentMode: 0
           weightedMode: 0
           inWeight: 0
@@ -431,7 +507,7 @@ MonoBehaviour:
         m_PostInfinity: 2
         m_RotationOrder: 4
   hueVsHue:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value:
       <length>k__BackingField: 1
       m_Loop: 1
@@ -442,7 +518,7 @@ MonoBehaviour:
         m_Curve:
         - serializedVersion: 3
           time: 0
-          value: 0
+          value: 0.67484665
           inSlope: 0
           outSlope: 0
           tangentMode: 0
@@ -509,4 +585,4 @@ MonoBehaviour:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-  m_SelectedCurve: 4
+  m_SelectedCurve: 1

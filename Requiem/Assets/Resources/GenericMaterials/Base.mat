@@ -199,7 +199,7 @@ Material:
     - _ShellPower: 7.5
     - _ShiverDirectionality: 0.5
     - _ShiverDrag: 0.2
-    - _Smoothness: 0.5
+    - _Smoothness: 0.9
     - _SmoothnessRemapMax: 1
     - _SmoothnessRemapMin: 0
     - _SpecularAAScreenSpaceVariance: 0.1
@@ -237,6 +237,7 @@ Material:
     - _ZTestModeDistortion: 4
     - _ZWrite: 1
     m_Colors:
+    - Vector2_EBD0951F: {r: 10, g: 10, b: 0, a: 0}
     - _BaseColor: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0.6411017, g: 0.76177967, b: 0.89, a: 1}

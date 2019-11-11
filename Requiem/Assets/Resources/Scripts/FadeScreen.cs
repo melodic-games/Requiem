@@ -1,11 +1,10 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class FadeScreen : MonoBehaviour
 {
 
-    public Texture image;
+    public Image image;
     [Range(0, 1)]
     public float alpha = 1;
     [Range(0,1)]
@@ -13,7 +12,7 @@ public class FadeScreen : MonoBehaviour
 
     private void Update()
     {
-        if (Time.time > .5f)
+        if (Time.timeSinceLevelLoad > 2)
         {
             //alpha = Mathf.Lerp(alpha, target, Time.deltaTime * 1);
 
@@ -27,17 +26,12 @@ public class FadeScreen : MonoBehaviour
             {
                 alpha = target;
             }   
-                
+                             
         }
+
+        image.color = new Color(0, 0, 0, alpha);
+
     }
 
-    private void OnGUI()
-    {
-        if (image != null)
-        {
-            GUI.color = new Vector4(1, 1, 1, alpha);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), image);
-            GUI.color = new Vector4(1, 1, 1, 1);
-        }
-    }
+
 }

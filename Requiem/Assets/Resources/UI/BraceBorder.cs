@@ -1,26 +1,28 @@
 ﻿using UnityEngine;
-
+using UnityEngine.UI;
 
 public class BraceBorder : MonoBehaviour
 {
-    public Texture image;
+    public bool overrideInupt = false;
+
+    public Image image;
+
+    public Sprite sprite;
     [Range(0, 1)]
     public float scale = 1;
     [Range(0, 1)]
     public float target = 0;
 
-    public float height = 0;
-
-    public float displacement;
-
     private void Update()
     {
               
-        if (Input.GetAxisRaw("Focus") == 1)
+        if (!overrideInupt)
+        if (Input.GetAxisRaw("Focus") == 1 )
             target = 1;
         else
             target = 0;
-        
+
+        if (Time.timeSinceLevelLoad > 5)
         {            
             float dir = Mathf.Sign(target - scale);
             float dist = Mathf.Abs(target - scale);
@@ -33,15 +35,10 @@ public class BraceBorder : MonoBehaviour
                 scale = target;
             }
         }
-        
+
+        image.color = new Color(0, 0, 0, scale);
+
     }
 
-    private void OnGUI()
-    {
-        if(image != null)
-        {
-            GUI.color = new Color(1,1,1,scale);
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), image);            
-        }
-    }
+
 }

@@ -18,7 +18,7 @@ public class OperatorControl : MonoBehaviour
     [Range(0, 4)]
     public Vector3 worldPosition = Vector3.zero;
     private Vector3 orbitPoint;
-    Vector3 forwardDirection;
+    public Vector3 forwardDirection;
     private Vector3 velocity;
     private Vector3 velNorm;
     private float velMag;
@@ -98,59 +98,58 @@ public class OperatorControl : MonoBehaviour
 
     void Update()
     {
-
-        TrailUpdate();
-
-        //Update Physics Values
+               
+        if (Time.deltaTime != 0)
         {
-            velocity = (transform.position - previousPosition) / Time.deltaTime;
-            velNorm = velocity.normalized;
-            velMag = velocity.magnitude;
-            previousPosition = transform.position;
-            if (target != null)
-                targetVelocity = (target.transform.position - targetPreviousPosition) / Time.deltaTime;
-            targetVelMag = targetVelocity.magnitude;
-            targetVelNorm = targetVelocity.normalized;
-            if (target != null)
-                targetPreviousPosition = target.transform.position;
 
-            targetFacingDirection = Vector3.Lerp(targetFacingDirection, targetVelocity.normalized, targetVelMag);
+            TrailUpdate();
+
+            //Update Physics Values
+            {
+                velocity = (transform.position - previousPosition) / Time.deltaTime;
+                velNorm = velocity.normalized;
+                velMag = velocity.magnitude;
+                previousPosition = transform.position;
+                if (target != null && Time.deltaTime != 0)
+                    targetVelocity = (target.transform.position - targetPreviousPosition) / Time.deltaTime;
+                targetVelMag = targetVelocity.magnitude;
+                targetVelNorm = targetVelocity.normalized;
+                if (target != null)
+                    targetPreviousPosition = target.transform.position;
+
+                targetFacingDirection = Vector3.Lerp(targetFacingDirection, targetVelocity.normalized, targetVelMag);
+            }
+
+            //LocalOffset
+            {
+                float cosx = Mathf.Cos(xOffsetRotation * Mathf.Deg2Rad);
+                localOffset = new Vector3(Mathf.Sin(yOffsetRotation * Mathf.Deg2Rad) * cosx, Mathf.Sin(xOffsetRotation * Mathf.Deg2Rad), Mathf.Cos(yOffsetRotation * Mathf.Deg2Rad) * cosx) * offsetDistance;
+            }
+
+            //Deviation and lerp
+            {
+                lerp = Mathf.Lerp(lerp, Mathf.InverseLerp(2, 80, targetVelMag), Time.deltaTime * 1);
+                deviationScale = Mathf.Lerp(deviationScale, 3, Time.deltaTime * 2);
+                deviation = new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f) * (deviationScale + 1);
+            }
+
+            Vector3 gravity = gM.ReturnGravity(transform, Vector3.zero).normalized;
+
+            //Movement mode behaviour        
+            if (target != null)// move to target position with offset, reset worldPosition to current position, find facing directions
+            {
+                worldPosition = transform.position;
+                targetPosition = target.position + localOffset;
+                forwardDirection = velNorm;
+            }
+
+            orbitPoint = Vector3.Lerp(orbitPoint, targetPosition, lerp);
+
+            transform.position = orbitPoint + deviation;
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(forwardDirection, -gravity), Time.deltaTime * 10);
+
         }
-
-
-
-        //LocalOffset
-        {
-            float cosx = Mathf.Cos(xOffsetRotation * Mathf.Deg2Rad);
-            localOffset = new Vector3(Mathf.Sin(yOffsetRotation * Mathf.Deg2Rad) * cosx, Mathf.Sin(xOffsetRotation * Mathf.Deg2Rad), Mathf.Cos(yOffsetRotation * Mathf.Deg2Rad) * cosx) * offsetDistance;
-        }
-
-        //Deviation and lerp
-        {
-            lerp = Mathf.Lerp(lerp, Mathf.InverseLerp(2, 80, targetVelMag), Time.deltaTime * 1);
-            deviationScale = Mathf.Lerp(deviationScale, 3, Time.deltaTime * 2);
-            deviation = new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f) * (deviationScale + 1);
-        }
-
-        Vector3 gravity = gM.ReturnGravity(transform).normalized;
-
-        //Movement mode behaviour        
-        if (target != null)// move to target position with offset, reset worldPosition to current position, find facing directions
-        {
-            worldPosition = transform.position;
-            targetPosition = target.position + localOffset;
-            forwardDirection = velNorm;// Vector3.Lerp(target.forward, velNorm,1);                                          
-        }
-
-        orbitPoint = Vector3.Lerp(orbitPoint, targetPosition, lerp);
-        // orbitPoint = Vector3.SmoothDamp(orbitPoint, targetPosition, ref velocity, .3f, 200);
-
-        transform.position = orbitPoint + deviation;
-
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(forwardDirection, -gravity), Time.deltaTime * 10);
-
     }
-
 
 }
 

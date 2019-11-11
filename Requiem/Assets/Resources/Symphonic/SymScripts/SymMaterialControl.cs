@@ -24,13 +24,18 @@ public class SymMaterialControl : MonoBehaviour
 
             //Calulate color from index
             {
-                color = SignatureColors.colors[(int)emissionColorIndex];
+                float t = 0;
+                if (behaviour.chargingEnergy || behaviour.energyLevel == 1)
+                    t = 1;               
+                color = Color.Lerp(Color.black,SignatureColors.colors[(int)emissionColorIndex],t);
             }
 
             foreach (Material material in bodyMaterials)
             {
+                float t = 0;
+
                 material.SetColor("_EmissiveColor", color);
-                material.SetFloat("_ShellPower", ((1 - behaviour.energyLevel) * 5) + 1);
+                material.SetFloat("_ShellPower", ((1 - t) * 5) + 1);
             }
 
             foreach (Material material in emissionMaterials)

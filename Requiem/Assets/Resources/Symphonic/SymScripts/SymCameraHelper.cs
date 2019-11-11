@@ -40,7 +40,7 @@ public class SymCameraHelper : MonoBehaviour
             
             if (behaviour.stateMachine.currentModule.GetType() == typeof(SymBaseModule))
             {
-                
+                //cameraControl.upResetLerp = 10;
                 if (behaviour.crouching && behaviour.rbVelocityMagnatude < 20 && behaviour.grounded)
                 {
                     camZoomDistanceMin = 2;
@@ -56,7 +56,8 @@ public class SymCameraHelper : MonoBehaviour
             }
             
             if (behaviour.stateMachine.currentModule.GetType() == typeof(SymFlightModule))
-            {     
+            {
+                cameraControl.upResetLerp = 1;
                 camLocalOffset = Vector3.zero;
                 camZoomDistanceMin = 4;
                 if (behaviour.energyLevel == 1 && behaviour.rbVelocityMagnatude < 20)
@@ -99,7 +100,7 @@ public class SymCameraHelper : MonoBehaviour
         {
             if (!behaviour.grounded && behaviour.flightEnabled)
             {
-                CauseCameraShake(.025f * Mathf.InverseLerp(20, 60, Mathf.Abs(behaviour.verticalSpeed)));
+                //CauseCameraShake(.025f * Mathf.InverseLerp(20, 60, Mathf.Abs(behaviour.groundVerticalSpeed)));
             }
         }
 

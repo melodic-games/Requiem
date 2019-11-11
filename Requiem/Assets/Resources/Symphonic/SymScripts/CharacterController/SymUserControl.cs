@@ -5,56 +5,59 @@ public class SymUserControl : SymControlSource<SymBehaviour>  {
 
     public override void CollectInput()
     {
-        //Focus Input
+        if (Time.timeSinceLevelLoad > 5)
         {
-            focusInput = Input.GetAxis("Focus");
-        }
-
-        //Jump
-        {
-            jump = Input.GetButtonDown("Jump/Bounce");            
-        }
-
-        //Bounce
-        {
-            bounce = Input.GetButtonDown("Jump/Bounce");                
-        }
-        
-        //Crouching
-        {
-            crouching = Input.GetButton("Crouching");                
-        }
-
-        //Running
-        {
-            canRun =  Input.GetButton("Run");               
-        }
-
-        thrustInput = Input.GetAxisRaw("Thrust");
-
-        if (Input.GetAxisRaw("Thrust") == 1)
-        {
-            if (dash_ResponceDisabled == false)
+            //Focus Input
             {
-                dash = true;
-                dash_ResponceDisabled = true;
+                focusInput = Input.GetAxis("Focus");
+            }
+
+            //Jump
+            {
+                jump = Input.GetButtonDown("Jump/Bounce");
+            }
+
+            //Bounce
+            {
+                bounce = Input.GetButtonDown("Jump/Bounce");
+            }
+
+            //Crouching
+            {
+                crouching = Input.GetButton("Crouching");
+            }
+
+            //Running
+            {
+                canRun = Input.GetButton("Run");
+            }
+
+            thrustInput = Input.GetAxisRaw("Thrust");
+
+            if (Input.GetAxisRaw("Thrust") == 1)
+            {
+                if (boost_ResponceDisabled == false)
+                {
+                    boost = true;
+                    boost_ResponceDisabled = true;
+                }
+                else
+                {
+                    boost = false;
+                }
             }
             else
             {
-                dash = false;
+                boost = false;
+                boost_ResponceDisabled = false;
             }
-        }
-        else
-        {
-            dash = false;
-            dash_ResponceDisabled = false;
-        }
-        
-        rollAxisInput = Input.GetAxis("Horizontal");
-        pitchAxisInput = Input.GetAxis("Vertical");
 
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
+            rollAxisInput = Input.GetAxis("Horizontal");
+            pitchAxisInput = Input.GetAxis("Vertical");
+
+            horizontalInput = Input.GetAxis("Horizontal");
+            verticalInput = Input.GetAxis("Vertical");
+        }
 
     }
 

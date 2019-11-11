@@ -17,12 +17,12 @@ public class SymAnimationHandler : MonoBehaviour
     void Update()
     {
         //Set animator values 
-        if (behaviour != null)
+        if (behaviour != null) 
         {
             if (animator != null)
-            {
+            {                                
                 animator.SetFloat("Speed", behaviour.rbVelocityMagnatude, 0.1f, Time.deltaTime);
-                animator.SetFloat("VerticalSpeed", behaviour.verticalSpeed, 0.1f, Time.deltaTime);
+                animator.SetFloat("VerticalSpeed", behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.gravity.normalized), 0.1f, Time.deltaTime);
                 animator.SetFloat("RotZ", Mathf.Abs(behaviour.localAngularVelocity.z), 0.1f, Time.deltaTime);
                 animator.SetFloat("RotX", Mathf.Abs(behaviour.localAngularVelocity.x), 0.1f, Time.deltaTime);
                 animator.SetFloat("RotY", Mathf.Abs(behaviour.localAngularVelocity.y), 0.1f, Time.deltaTime);

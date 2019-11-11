@@ -44,36 +44,40 @@ public class SymEffectControl : MonoBehaviour
             Explode();
         }
 
-        ps.gameObject.transform.rotation = Quaternion.identity;
-        var main = ps.main;
-        var shape = ps.shape;
-        var emission = ps.emission;
+        if (ps != null)
+        {
+            ps.gameObject.transform.rotation = Quaternion.identity;
+            var main = ps.main;
+            var shape = ps.shape;
+            var emission = ps.emission;
 
-        if (isActive)
-        {            
-            main.loop = true;
-            main.startLifetime = .5f;
-            main.startSpeed = -4;
-            shape.radius = 2;
-            emission.rateOverTime = Mathf.Lerp(0, 40, 1);//33.42f;
-            if (!ps.isPlaying) ps.Play();                           
-        }
-        else
-        {           
-            ps.Stop(false, ParticleSystemStopBehavior.StopEmitting);                               
+            if (isActive)
+            {
+                main.loop = true;
+                main.startLifetime = .5f;
+                main.startSpeed = -4;
+                shape.radius = 2;
+                emission.rateOverTime = Mathf.Lerp(0, 40, 1);//33.42f;
+                if (!ps.isPlaying) ps.Play();
+            }
+            else
+            {
+                ps.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+            }
         }
 
     }
 
     private void LateUpdate()
     {
-        ps.transform.position = chestAnchor.position;
+        if (ps != null)
+            ps.transform.position = chestAnchor.position;
     }
 
     void Explode()
     {
         if (particleExplosion != null)
-            Instantiate(particleExplosion, transform.position, transform.rotation);
+            Instantiate(particleExplosion, transform.position + transform.up * behaviour.playerHeight * .5f, transform.rotation);
 
         //Explosion force
         SymUtils.ShockWave(transform.position, behaviour.rbVelocityMagnatude, behaviour.rb);

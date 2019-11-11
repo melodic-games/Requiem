@@ -1,70 +1,48 @@
 ﻿using UnityEngine;
 using UnityEditor;
 
-[ExecuteInEditMode]
 public class TrailControl : MonoBehaviour
 {
-
-    public TrailRenderer trailRenderer;
-    public Transform anchor;
-    private Rigidbody rb;
-    private float rbVelocityMagnatude;
-    bool detach;
-    private SymBehaviour behaviour;
+    private TrailRenderer[] trailRenderers = new TrailRenderer[] { null, null };
+    public SymBehaviour behaviour;
     public float widthBase = 0.05f;
     private float velocityScale;
     public float beginTrailSpeed = 30;
     public float trailGrowRange = 30;
 
+    public Material trailMaterial;
+
     void Start()
     {
-        transform.position = anchor.position;
-        transform.parent = anchor;
-        rb = GetComponent<Rigidbody>();
+        Animator animator = GetComponent<Animator>();
+               
         behaviour = GetComponent<SymBehaviour>();
+
+        trailRenderers[0] = animator.GetBoneTransform(HumanBodyBones.RightHand).gameObject.AddComponent<TrailRenderer>();
+        trailRenderers[1] = animator.GetBoneTransform(HumanBodyBones.LeftHand).gameObject.AddComponent<TrailRenderer>();
+
+        foreach (TrailRenderer t in trailRenderers)
+        {
+            t.widthMultiplier = widthBase;
+            t.time = 0;
+            t.material = trailMaterial;
+        }
     }
 
     void LateUpdate()
     {
-        //if (!EditorApplication.isPlaying)
-        //{
-        //    if (anchor != null)
-        //        transform.position = anchor.position;
-        //}
-        //else
-        {            
-            if (behaviour != null)
+                      
+        if (behaviour != null)
+        {                                                   
+            velocityScale = Mathf.InverseLerp(beginTrailSpeed, beginTrailSpeed + trailGrowRange, behaviour.rbVelocityMagnatude);
+            foreach(TrailRenderer t in trailRenderers)
             {
-                rbVelocityMagnatude = behaviour.rbVelocityMagnatude;     
-                
-                if (Mathf.Abs(behaviour.localAngularVelocity.x) > .2f)
-                    detach = true;
-                else
-                    detach = false;
-
-                SymphonicTrails();
-            }            
-        }
-    }
-
-    void SymphonicTrails()
-    {
-        
-        velocityScale = Mathf.InverseLerp(beginTrailSpeed, beginTrailSpeed + trailGrowRange, rbVelocityMagnatude);                                                             
+                t.time = Mathf.Lerp(0,0.6f,velocityScale);
+            }
             
-        trailRenderer.widthMultiplier = widthBase;
-
-        trailRenderer.time = 0.2f;
-
-        if (velocityScale == 0 || detach)
-        {                   
-            transform.parent = null;
-        }
-        else
-        {
-            transform.position = anchor.position;
-            transform.parent = anchor;                                        
-        }
-
+        }            
+        
     }
+
+
 }

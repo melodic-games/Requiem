@@ -6,8 +6,8 @@
         public bool invertFocus = false;
         public float focusInput;
 
-        public bool dash;
-        public bool dash_ResponceDisabled = false;
+        public bool boost;
+        public bool boost_ResponceDisabled = false;
 
         public bool jump = false;
         public bool bounce = false;

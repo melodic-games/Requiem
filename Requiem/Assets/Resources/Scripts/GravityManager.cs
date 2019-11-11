@@ -31,7 +31,7 @@ public class GravityManager : MonoBehaviour
          
         //Populate Initial Sources
         {
-            gravitySources = new List<GravitySource>();
+            //gravitySources = new List<GravitySource>();
 
             foreach (GameObject obj in GameObject.FindGameObjectsWithTag("Environment"))
             {
@@ -87,8 +87,10 @@ public class GravityManager : MonoBehaviour
         }
     }
 
-    public Vector3 ReturnGravity(Transform mytransform)
+    public Vector3 ReturnGravity(Transform mytransform, Vector3 positionOffset)
     {
+
+        Vector3 myPosition = mytransform.position + positionOffset;
 
         Vector3 gravity;
 
@@ -110,7 +112,7 @@ public class GravityManager : MonoBehaviour
                         gs.type = GravityType.Spherical;
                         goto case GravityType.Spherical;                       
                     case GravityType.Spherical:  
-                        objectGravity += Mathf.Min(gs.mass / Vector3.SqrMagnitude(mytransform.position - gs.position), maxObjectGravity) * (gs.position - mytransform.position).normalized * gs.durationScaler;
+                        objectGravity += Mathf.Min(gs.mass / Vector3.SqrMagnitude(myPosition - gs.position), maxObjectGravity) * (gs.position - myPosition).normalized * gs.durationScaler;
                         break;
                     case GravityType.Planar:
                         break;
@@ -131,6 +133,8 @@ public class GravityManager : MonoBehaviour
                         break;                    
                 }                       
             }
+
+            objectGravity = Vector3.ClampMagnitude(objectGravity, 10);
         }
 
         //Cancel out Scene gravity when object gravity magnitude is the same size or bigger.       

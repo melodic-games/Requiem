@@ -12,7 +12,7 @@ Material:
     type: 3}
   m_ShaderKeywords: _EMISSIVE_COLOR_MAP _NORMALMAP _NORMALMAP_TANGENT_SPACE
   m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
+  m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap:
@@ -27,11 +27,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - Texture2D_413FFA77:
-        m_Texture: {fileID: 2800000, guid: 25bd00c40a5b4764982a0fe97cafcb22, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_57DB264C:
-        m_Texture: {fileID: 2800000, guid: a32ef4d421197e743a804ac92869b9e8, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_C129D7A0:
@@ -39,8 +39,9 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - Vector1_17FBE0: 7.5
-    - Vector1_A43B269D: 5
+    - Vector1_17FBE0: 25.87
+    - Vector1_32B2EFE6: 0
+    - Vector1_A43B269D: 0.5
     - _AlphaCutoff: 0.5
     - _AlphaCutoffEnable: 0
     - _AlphaDstBlend: 0
@@ -51,6 +52,7 @@ Material:
     - _DoubleSidedEnable: 0
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
+    - _NoiseSize: -26.03
     - _ReceivesSSR: 1
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
@@ -66,6 +68,7 @@ Material:
     - _StencilWriteMaskGBuffer: 51
     - _StencilWriteMaskMV: 176
     - _SurfaceType: 0
+    - _TileScale: 0.3
     - _TransparentBackfaceEnable: 0
     - _TransparentCullMode: 2
     - _TransparentSortPriority: 0
@@ -75,9 +78,9 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - Color_394F0D69: {r: 0.34682378, g: 0.41278413, b: 0.48299998, a: 1}
-    - Color_AE6930B4: {r: 9.082411, g: 0.7568676, b: 0, a: 1}
-    - Vector2_2AC04287: {r: 0.04, g: 1, b: 0, a: 0}
-    - _Color: {r: 0, g: 0, b: 0, a: 0}
-    - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
+    - Color_394F0D69: {r: 0, g: 0.22399688, b: 0.545, a: 1}
+    - Color_AE6930B4: {r: 766.9961, g: 64.250984, b: 0, a: 1}
+    - Vector2_2AC04287: {r: -0.01, g: 0.1, b: 0, a: 0}
+    - _Color: {r: 23.968628, g: 2.0078433, b: 0, a: 1}
+    - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}

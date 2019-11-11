@@ -15,13 +15,27 @@ public class SymIKHandler : MonoBehaviour
 
     private Animator animator;
     private Rigidbody rb;
-
     private Vector3 localAngularVelocity;
+
+    private Vector3 lookPosition;
+    private Vector3 lookDir;
+    private Transform headBone;
+
+    public bool useFootIK = false;
+
+    private float leftFootWeight = 1;
+    private float rightFootWeight = 1;
+    private Vector3 leftFootPosition;
+    private Vector3 rightFootPosition;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
+
+        headBone = animator.GetBoneTransform(HumanBodyBones.Head);
+        lookPosition = headBone.position + headBone.forward;
+        lookDir = headBone.forward;
 
         //Initilize Dynamic Bones
         {
@@ -50,27 +64,46 @@ public class SymIKHandler : MonoBehaviour
 
         foreach (DynamicBone bone in dynamicBones)
         {
-            bone.m_Stiffness =  Mathf.InverseLerp(3, 20, Mathf.Abs(localAngularVelocity.y) + Mathf.Abs(localAngularVelocity.x)); //energyLevel;
+            bone.m_Stiffness =  Mathf.InverseLerp(3, 10, Mathf.Abs(localAngularVelocity.y) + Mathf.Abs(localAngularVelocity.x)); //energyLevel;
             bone.UpdateParameters();
         }
+
+        Debug.DrawLine(headBone.position, lookPosition);
     }
 
     void OnAnimatorIK()
     {       
         //Main
         {
-            float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);
-            animator.SetLookAtWeight(t, .2f, .8f, 1, .5f);
-            animator.SetLookAtPosition(cameraControl.characterTargetingPosition);
+
+
+            lookDir = Vector3.Lerp(lookDir, (cameraControl.characterTargetingPosition - headBone.position).normalized, Time.deltaTime * 5);
+            lookPosition = headBone.position + lookDir;
+            animator.SetLookAtPosition(lookPosition);
+
+            float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);            
+            animator.SetLookAtWeight(t, .5f, .8f, 1, 1f);
+
         }
 
         //Foot IK
-        {
-            //animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
-            //animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
+        if (useFootIK)
+        {          
 
-            //animator.SetIKPosition(AvatarIKGoal.LeftFoot, leftFootPosition);
-            //animator.SetIKPosition(AvatarIKGoal.RightFoot, rightFootPosition);
+            Ray ray = new Ray(Vector3.zero, Vector3.zero);
+            RaycastHit hitInfo;
+            float maxDist = 0;
+
+            Physics.Raycast(ray, out hitInfo, maxDist);
+            leftFootPosition = hitInfo.point;           
+            Physics.Raycast(ray, out hitInfo, maxDist);
+            rightFootPosition = hitInfo.point;
+
+            animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, leftFootWeight);
+            animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, rightFootWeight);
+
+            animator.SetIKPosition(AvatarIKGoal.LeftFoot, leftFootPosition);
+            animator.SetIKPosition(AvatarIKGoal.RightFoot, rightFootPosition);
         }
     }
 }

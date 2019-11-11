@@ -16,13 +16,19 @@ public class SymFlightModule : Module<SymBehaviour>
     private Vector3 angularGain = new Vector3(1, 1, 1);
     private float lateralDrag;
 
+    private bool boosting = false;
+    //private float boostSpeed = 40;
+    private float boostTime = 0;
+    private float boostDuration = .2f;
+    //private float boostInterupt = .1f;
+    //private float boostWindup = .1f;
+
     //Input Data
     private float rollAxisInput = 0;
     private float pitchAxisInput = 0;
-    //private float yawAxisInput = 0;
 
     private float thrustInput = 0;
-    //private bool thrustInputAsButtion = false;
+    private bool boost = false;
 
     private float bounceBuffer = Mathf.Infinity;
     private float bounceBufferMax = .5f;
@@ -56,10 +62,12 @@ public class SymFlightModule : Module<SymBehaviour>
 
     public override void EnterModule(SymBehaviour owner)
     {
+        Debug.Log("EnteringFlightModule");
         owner.flightEnabled = true;
         heading = Camera.main.transform.forward;
         bounceBuffer = bounceBufferMax;
-        owner.rb.angularDrag = 5;        
+        owner.rb.angularDrag = 5;
+        
     }
 
     public override void UpdateModule(SymBehaviour owner)
@@ -69,6 +77,13 @@ public class SymFlightModule : Module<SymBehaviour>
             rollAxisInput = owner.controlSource.rollAxisInput;
             pitchAxisInput = owner.controlSource.pitchAxisInput;
             thrustInput = owner.controlSource.thrustInput;
+
+            if (!boosting)
+                if (owner.controlSource.boost && owner.energyLevel == 1)
+                {
+                    boost = true;
+                }
+
             focusInput = owner.controlSource.focusInput;
             if (owner.controlSource.bounce)
             {
@@ -79,9 +94,37 @@ public class SymFlightModule : Module<SymBehaviour>
 
     public override void Locomotion(SymBehaviour owner)
     {
+       
+        //The character flies "upwards" from their walking orientation normally
+        Vector3 forward = owner.transform.up;
+        //Making the flight upvector come from the characters back
+        Vector3 up = -owner.transform.forward;
 
         //Passive adjustments and calulations 
         {
+            //Calulate locomotion input interruption specific to this module
+            {
+                if (boostTime < boostDuration && boosting)
+                    owner.locomotionInputInterupt = true;
+            }
+
+            //BoostTime update
+            {
+                //Increment boostTime
+                if (boosting)
+                {
+                    boostTime += Time.deltaTime;
+
+                    //Reset boosting and boostTIme once we have boosted the full duration
+                    if (boostTime >= boostDuration)
+                    {
+                        boostTime = 0;
+                        boosting = false;
+                    }
+                }
+
+            }
+
             //bounceBuffer Update
             {
                 bounceBuffer += Time.deltaTime;
@@ -95,9 +138,8 @@ public class SymFlightModule : Module<SymBehaviour>
                     owner.energyLevel = Mathf.Min(owner.energyLevel + Time.deltaTime, 1);
                     owner.chargingEnergy = true;
                 }
-                else if (Mathf.Abs(owner.localAngularVelocity.y) < 2)
-                {
-                    owner.energyLevel = Mathf.Max(owner.energyLevel - Time.deltaTime, 0);
+                else
+                {                    
                     owner.chargingEnergy = false;
                 }
 
@@ -137,85 +179,98 @@ public class SymFlightModule : Module<SymBehaviour>
             {
                 liftScale = Mathf.Clamp01(liftScale + 1 * Time.deltaTime) * thrustInput;
             }
-        }
 
-        //The character flies "upwards" from their walking orientation normally
-        Vector3 forward = owner.transform.up;
-        //Making the flight upvector come from the characters back
-        Vector3 up = -owner.transform.forward;            
-
-        //determin TargetHeading
-        {
-            Vector3 focusedHeading = Camera.main.transform.forward;
-            Vector3 signedVelocityNormal = owner.rbVelocityNormalized * Mathf.Sign(Vector3.Dot(owner.rbVelocityNormalized, forward));
-            Vector3 unfocusedHeading = Vector3.Lerp(signedVelocityNormal, forward, thrustInput);//Lerp between the Velocity and the characters flight forward for no rotation effect. Stabalizes forward flight at low thrust levels
-            unfocusedHeading = Vector3.Lerp(forward, unfocusedHeading, owner.rbVelocityMagnatude);//extra scale based on velocity for when stationary in air
-            heading = Vector3.Lerp(unfocusedHeading, focusedHeading, focusInput);//Lerp between using the unfocusedHeading, and using the camera.
-        }
-
-        //Align towards the target heading.                    
-        {
-            Vector3 axis = Vector3.Cross(forward, heading);//Get the axis to turn around.
-            float disable = 1-Mathf.Clamp01(Mathf.Abs(pitchAxisInput * 2) + Mathf.Abs(rollAxisInput * 2));//Scalar to disable auto turning                                               
-            owner.rb.AddTorque(axis * disable * 10, ForceMode.Acceleration);
-        }
-
-
-        //Angular Acceleration (OLD BUT WORKING)
-        {
-            //Pitch - x
-            owner.rb.AddTorque(owner.transform.right * pitchAxisInput * angularAccelerationBase * angularGain.x, ForceMode.Acceleration);
-            //Roll - y
-            owner.rb.AddTorque(-forward * rollAxisInput * angularAccelerationBase * angularGain.y, ForceMode.Acceleration);
-        }
-
-        ////Angular Acceleration              
-        //{
-        //    Vector3 axis = ((owner.transform.right * pitchAxisInput) + (-forward * rollAxisInput)).normalized;
-        //    float input = Mathf.Clamp01(Mathf.Abs(pitchAxisInput) + Mathf.Abs(rollAxisInput));
-        //    //Make angualr gain a weighted average
-        //    owner.rb.AddTorque(axis * input * angularAccelerationBase * angularGain.x, ForceMode.Acceleration);//NOT FINISHED. Needs to use both angular gains
-        //}
-
-        //Forward Acceleration  
-        {
-          
-            //Player Activated Boost               
+            //Control Drag
             {
-                owner.rb.velocity = Vector3.ClampMagnitude(owner.rb.velocity + forward * topSpeed * owner.energyLevel * thrustInput, topSpeed);
-                //Disable Charging           
-                if (thrustInput == 1)
-                if (owner.energyLevel > .5)
-                {
-                    float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
-                    //Disable camera lerp when pushed back by a shockwave, but behind the character.                        
-                    owner.cameraHelper.CameraSetLerp((dot + 1) * .5f);
-                    owner.gameObject.SendMessage("Explode");                   
-                }
-               
-                //Expend EnergyLevel
-                owner.energyLevel *= 1 - thrustInput;
+                //drag along the characters flight up vector, signed. Ignoring side axis drag.
+                lateralDrag = Vector3.Dot(owner.rbVelocityNormalized, up);
+                //drag along the characters flight forward vector, only using force along the negative forward axis.
+                float backwardsDrag = Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, -forward));
+                //Disable drag while summersaulting
+                float disable = 1 - Mathf.Clamp01(Mathf.Abs(owner.localAngularVelocity.x / 2));
+                //max velocity adjustment
+                float highEndDrag = Mathf.Lerp(0, 10, Mathf.InverseLerp(topSpeed - 20, topSpeed, owner.rbVelocityMagnatude));
+                //backwards + lateral + highEnd
+                owner.rb.drag = Mathf.Lerp(0, 0.2f, backwardsDrag * disable) + Mathf.Lerp(0, 1f, Mathf.Abs(lateralDrag) * disable) + highEndDrag;
             }
 
-            //Diving downwards doubles acceleration base speed
-            float diveBoost = flightAccelerationBase * Mathf.Clamp01(Vector3.Dot(forward, owner.gravity.normalized));
-            moveAcceleration = flightAccelerationBase  + diveBoost;
+            //determin TargetHeading
+            {
+                Vector3 focusedHeading = Camera.main.transform.forward;
+                Vector3 signedVelocityNormal = owner.rbVelocityNormalized * Mathf.Sign(Vector3.Dot(owner.rbVelocityNormalized, forward));
+                Vector3 unfocusedHeading = Vector3.Lerp(signedVelocityNormal, forward, thrustInput);//Lerp between the Velocity and the characters flight forward for no rotation effect. Stabalizes forward flight at low thrust levels
+                unfocusedHeading = Vector3.Lerp(forward, unfocusedHeading, owner.rbVelocityMagnatude);//extra scale based on velocity for when stationary in air
+                heading = Vector3.Lerp(unfocusedHeading, focusedHeading, focusInput);//Lerp between using the unfocusedHeading, and using the camera.
+            }
 
-            owner.rb.AddForce(forward * thrustInput * moveAcceleration, ForceMode.Acceleration);
+            //Align towards the target heading.                    
+            {
+                Vector3 axis = Vector3.Cross(forward, heading);//Get the axis to turn around.
+                float disable = 1 - Mathf.Clamp01(Mathf.Abs(pitchAxisInput * 2) + Mathf.Abs(rollAxisInput * 2));//Scalar to disable auto turning                                               
+                owner.rb.AddTorque(axis * disable * 10, ForceMode.Acceleration);
+            }
+
         }
 
-        //Control Drag
-        {
-            //drag along the characters flight up vector, signed. Ignoring side axis drag.
-            lateralDrag = Vector3.Dot(owner.rbVelocityNormalized, up);
-            //drag along the characters flight forward vector, only using force along the negative forward axis.
-            float backwardsDrag = Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, -forward));
-            //Disable drag while summersaulting
-            float disable = 1 - Mathf.Clamp01(Mathf.Abs(owner.localAngularVelocity.x / 2));
-            //max velocity adjustment
-            float highEndDrag = Mathf.Lerp(0, 10, Mathf.InverseLerp(topSpeed - 20, topSpeed, owner.rbVelocityMagnatude));
-            //backwards + lateral + highEnd
-            owner.rb.drag = Mathf.Lerp(0, 0.2f, backwardsDrag * disable) + Mathf.Lerp(0, 1f, Mathf.Abs(lateralDrag) * disable) + highEndDrag;
+        //Locomotion
+        if (!owner.locomotionInputInterupt)
+        { 
+
+            //Angular Acceleration (OLD BUT WORKING)     
+            {
+                //Pitch - x
+                owner.rb.AddTorque(owner.transform.right * pitchAxisInput * angularAccelerationBase * angularGain.x, ForceMode.Acceleration);
+                //Roll - y
+                owner.rb.AddTorque(-forward * rollAxisInput * angularAccelerationBase * angularGain.y, ForceMode.Acceleration);
+            }
+
+            //Angular Acceleration      
+            //if (!boosting)
+            //{
+            //    Vector3 axis = ((owner.transform.right * pitchAxisInput) + (-forward * rollAxisInput)).normalized;
+            //    float input = Mathf.Clamp01(Mathf.Abs(pitchAxisInput) + Mathf.Abs(rollAxisInput));
+            //    //Make angualr gain a weighted average
+            //    owner.rb.AddTorque(axis * input * angularAccelerationBase * angularGain.x, ForceMode.Acceleration);//NOT FINISHED. Needs to use both angular gains
+            //}
+
+            //Player Activated Boost        
+            if (boost)
+            {
+                boost = false;
+                boostTime = 0;
+                boosting = true;
+
+                //Boost                
+                owner.rb.velocity = Vector3.ClampMagnitude(owner.rb.velocity + forward * topSpeed, topSpeed);
+                owner.rb.angularVelocity = Vector3.zero;
+
+                //Pause For a few frames (Feels bad)
+                //GameManager.manager.PauseGameForDuration(boostWindup);
+                
+                if (owner.energyLevel == 1)
+                {
+                    //Disable camera lerp when pushed back by a shockwave, but behind the character.     
+                    float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
+
+                   owner.cameraHelper.CameraSetLerp((dot + 1) * .5f); 
+                    
+                    //Visual Effect
+                    owner.gameObject.SendMessage("Explode");
+                }
+
+                //Expend Energy
+                owner.energyLevel = 0;
+            }
+
+            //Forward Acceleration      
+            {
+                //Diving downwards doubles acceleration base speed
+                float diveBoost = flightAccelerationBase * Mathf.Clamp01(Vector3.Dot(forward, owner.gravity.normalized));
+                moveAcceleration = flightAccelerationBase + diveBoost;
+
+                owner.rb.AddForce(forward * thrustInput * moveAcceleration, ForceMode.Acceleration);
+            }
+
         }
 
         //Lift force
@@ -223,22 +278,17 @@ public class SymFlightModule : Module<SymBehaviour>
             Vector3 force = SymUtils.RedirectForce(forward, owner.rbVelocityNormalized, owner.rbVelocityMagnatude, liftScale * liftCoefficient);
             owner.rb.AddForce(force, ForceMode.Acceleration);
         }
-                 
-    }
-
-
-    public override void OnCollisionStay(SymBehaviour owner, Collision collision)
-    {
 
     }
 
     public override void OnCollisionEnter(SymBehaviour owner, Collision collision)
-    { 
+    {
         //bounce if we pressed the jump button and will return to flight           
-        if (bounceBuffer <= bounceBufferMax && owner.flightEnabled)
+        if (bounceBuffer <= bounceBufferMax)
         {
 
             bounceBuffer = Mathf.Infinity;
+            owner.landingLag = owner.landingLagMax;
 
             //Character Effects
             {
@@ -256,14 +306,17 @@ public class SymFlightModule : Module<SymBehaviour>
 
         }
         else
-        {            
-            owner.ExitCurrentModule();
+        {
+            owner.grounded = true;         
             owner.flightEnabled = false;
-            owner.grounded = true;
+            owner.ExitCurrentModule();            
         }
     }
     
+    public override void OnCollisionStay(SymBehaviour owner, Collision collision)
+    {
 
+    }
 
     public override void ExitModule(SymBehaviour owner)
     {
