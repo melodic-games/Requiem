@@ -4,16 +4,17 @@ using System.Collections;
 public class InfinteDustfield : MonoBehaviour
 {
     private Transform myTransform;
-    public Transform suckTarget;
-    public Transform pullTarget;
+    public Transform suckTarget;    
     public ParticleSystem.Particle[] points;
     private ParticleSystem ps;
 
     public Vector3 wind;
+    private Vector3 gravity;
     public Vector3 windTarget;
     public float windTimer = 0;
     public float windTimerMax = 5;
-    
+
+    public GravityManager gm;
 
     public int maxCount = 100;
     public float size = 1;
@@ -69,10 +70,12 @@ public class InfinteDustfield : MonoBehaviour
     // Update is called once per frame
     void LateUpdate()
     {
+
+        gravity = gm.ReturnGravity(transform, Vector3.zero).normalized;
+
         if (points == null) CreateStars();
 
-        bool suck = Input.GetButton("Crouching");
-        bool pull = false;
+        bool suck = Input.GetButton("Crouching");        
 
         for (int i = 0; i < maxCount; i++) 
         {
@@ -80,13 +83,12 @@ public class InfinteDustfield : MonoBehaviour
             
             {
                 if (suckTarget != null && suck) { 
-                points[i].position = Vector3.MoveTowards(points[i].position, suckTarget.position, Time.deltaTime * 5);//Pull towards target
+                points[i].position = Vector3.MoveTowards(points[i].position, suckTarget.position, Time.deltaTime * 5);
                 if ((points[i].position - suckTarget.position).sqrMagnitude < .1f)
                     Reset(i);
                 }
 
-                if (pullTarget != null & pull)
-                    points[i].position = Vector3.MoveTowards(points[i].position, points[i].position - (pullTarget.position - points[i].position).normalized * 1000, Time.deltaTime * 5);//Push away from target
+                points[i].position = Vector3.MoveTowards(points[i].position, points[i].position + gravity * 1000, Time.deltaTime * 1);
                                       
             }
             

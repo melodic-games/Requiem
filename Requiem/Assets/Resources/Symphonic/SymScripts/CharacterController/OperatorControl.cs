@@ -56,53 +56,11 @@ public class OperatorControl : MonoBehaviour
         transform.position = target.position + target.TransformVector(localOffset);
     }
 
-    private void TrailUpdate()
-    {
-
-        //Trail 
-        {
-            float widthMultiplier;
-
-            float beginTrailSpeed = 40;
-            float trailGrowRange = 30;
-
-            float velScale = Mathf.Clamp01((velMag - beginTrailSpeed) / trailGrowRange);
-
-            float widthScale;
-            float angxDisable;
-
-            if (symBehaviour != null)
-            {
-                widthScale = .5f + (Mathf.Clamp01(Mathf.Abs(symBehaviour.localAngularVelocity.y) / 20) * 2);
-                angxDisable = 1 - Mathf.Clamp01(Mathf.Abs(symBehaviour.localAngularVelocity.x / 5));// if pitch speed is 0.2 or greater disable width.             
-            }
-            else
-            {
-                widthScale = .5f;
-                angxDisable = 1;
-            }
-
-            widthMultiplier = velScale * angxDisable * widthScale;
-
-            widthMultiplier *= Mathf.Clamp01((Vector3.Dot(velNorm, transform.forward) * 2) - 1);
-
-            if (trailRenderer != null)
-            {
-                trailRenderer.widthMultiplier = 0.05f * widthMultiplier;
-                trailRenderer.time = widthMultiplier == 0 ? 0 : 0.2f;
-            }
-
-        }
-
-    }
-
     void Update()
     {
                
         if (Time.deltaTime != 0)
-        {
-
-            TrailUpdate();
+        {           
 
             //Update Physics Values
             {
@@ -128,7 +86,7 @@ public class OperatorControl : MonoBehaviour
 
             //Deviation and lerp
             {
-                lerp = Mathf.Lerp(lerp, Mathf.InverseLerp(2, 80, targetVelMag), Time.deltaTime * 1);
+                lerp = Mathf.Lerp(lerp, Mathf.InverseLerp(5, 80, targetVelMag), Time.deltaTime * 1);
                 deviationScale = Mathf.Lerp(deviationScale, 3, Time.deltaTime * 2);
                 deviation = new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f) * (deviationScale + 1);
             }

@@ -7,7 +7,7 @@ public class SymFlightModule : Module<SymBehaviour>
 
     //Flight State
     public float moveAcceleration;
-    public float topSpeed = 180;
+    public float topSpeed = 220;
     private float flightAccelerationBase = 10;
     private float angularAccelerationBase = 10;
     private float spinUp = 0;
@@ -153,7 +153,7 @@ public class SymFlightModule : Module<SymBehaviour>
 
             //Disable gravity when spining
             {
-                owner.enableGravity = owner.enableGravity * (1 - Mathf.InverseLerp(0, 7, Mathf.Abs(owner.localAngularVelocity.y)));
+                //owner.enableGravity = owner.enableGravity * (1 - Mathf.InverseLerp(0, 7, Mathf.Abs(owner.localAngularVelocity.y)));
             }
 
             //Set Spinup values
@@ -173,6 +173,7 @@ public class SymFlightModule : Module<SymBehaviour>
             //Calulate angular acceleration force gain.
             {
                 angularGain = new Vector3(5 - (4 * thrustInput), 4 * (1 + spinUp * Mathf.Lerp(1, 2, Mathf.InverseLerp(30, topSpeed, owner.rbVelocityMagnatude))), 1);
+                angularGain = new Vector3(5 - (4 * thrustInput), 4 * (1 + spinUp * 2), 1);
             }
 
             //liftScale Calulation
@@ -187,7 +188,13 @@ public class SymFlightModule : Module<SymBehaviour>
                 //drag along the characters flight forward vector, only using force along the negative forward axis.
                 float backwardsDrag = Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, -forward));
                 //Disable drag while summersaulting
-                float disable = 1 - Mathf.Clamp01(Mathf.Abs(owner.localAngularVelocity.x / 2));
+                float disable = 1;
+                disable *= 1 - Mathf.Clamp01(Mathf.Abs(owner.localAngularVelocity.x / 2));
+                //Disable drag while rolling, but not trusting
+                if (thrustInput == 0)
+                {
+                    disable *= 1 - Mathf.Clamp01(Mathf.Abs(owner.localAngularVelocity.y / 5));
+                }
                 //max velocity adjustment
                 float highEndDrag = Mathf.Lerp(0, 10, Mathf.InverseLerp(topSpeed - 20, topSpeed, owner.rbVelocityMagnatude));
                 //backwards + lateral + highEnd
@@ -224,8 +231,7 @@ public class SymFlightModule : Module<SymBehaviour>
                 owner.rb.AddTorque(-forward * rollAxisInput * angularAccelerationBase * angularGain.y, ForceMode.Acceleration);
             }
 
-            //Angular Acceleration      
-            //if (!boosting)
+            //Angular Acceleration                  
             //{
             //    Vector3 axis = ((owner.transform.right * pitchAxisInput) + (-forward * rollAxisInput)).normalized;
             //    float input = Mathf.Clamp01(Mathf.Abs(pitchAxisInput) + Mathf.Abs(rollAxisInput));
@@ -249,11 +255,14 @@ public class SymFlightModule : Module<SymBehaviour>
                 
                 if (owner.energyLevel == 1)
                 {
+
                     //Disable camera lerp when pushed back by a shockwave, but behind the character.     
                     float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
 
-                   owner.cameraHelper.CameraSetLerp((dot + 1) * .5f); 
-                    
+                    owner.cameraHelper.CameraSetLerp((dot + 1) * .5f);
+
+                    owner.cameraHelper.CauseCameraShake(5);
+
                     //Visual Effect
                     owner.gameObject.SendMessage("Explode");
                 }
@@ -293,13 +302,13 @@ public class SymFlightModule : Module<SymBehaviour>
             //Character Effects
             {
                 //Find Reflection Vector
-                Vector3 reflect = Vector3.Reflect(owner.rbVelocityNormalized, owner.groundNormal);
+                Vector3 reflect = Vector3.Reflect(owner.rbVelocityNormalized, owner.surfaceNormal);
                 //Reflect Velocity
                 owner.rb.velocity = reflect * owner.rbVelocityMagnatude;
                 //Cancel Angular Velocity Caused By Collission
                 owner.rb.angularVelocity = Vector3.zero;
                 //Reflect Orientation
-                owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, owner.rbVelocityNormalized), reflect), owner.groundNormal);
+                owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, owner.rbVelocityNormalized), reflect), owner.surfaceNormal);
             }
 
             owner.cameraHelper.CameraBounce(collision);

@@ -4,14 +4,10 @@ using UnityEngine;
 
 public class SymIKHandler : MonoBehaviour
 {
-    public Transform leftShoulderAnchor;
-    public Transform rightShoulderAnchor;
-
-    public Transform leftHand;
-    public Transform rightHand;
-
-    public DynamicBone[] dynamicBones = new DynamicBone[] { null , null};
+    private DynamicBone[] dynamicBones = new DynamicBone[] { null , null};
     public CameraControl cameraControl;
+
+    private SymBehaviour behaviour;
 
     private Animator animator;
     private Rigidbody rb;
@@ -30,19 +26,27 @@ public class SymIKHandler : MonoBehaviour
 
     private void Start()
     {
+        behaviour = GetComponent<SymBehaviour>();
+
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
+
+        Transform leftShoulderAnchor = animator.GetBoneTransform(HumanBodyBones.LeftShoulder);
+        Transform rightShoulderAnchor = animator.GetBoneTransform(HumanBodyBones.RightShoulder);
+
+        Transform leftUpperLegAnchor = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg);
+        Transform rightUpperLegAnchor = animator.GetBoneTransform(HumanBodyBones.RightUpperLeg);
 
         headBone = animator.GetBoneTransform(HumanBodyBones.Head);
         lookPosition = headBone.position + headBone.forward;
         lookDir = headBone.forward;
 
-        //Initilize Dynamic Bones
+        //Initilize Dynamic Bone scripts
         {
             dynamicBones[0] = leftShoulderAnchor.gameObject.AddComponent<DynamicBone>();
 
             dynamicBones[0].m_Root = leftShoulderAnchor;
-            dynamicBones[0].m_Exclusions = new List<Transform>() { leftHand };
+            dynamicBones[0].m_Exclusions = new List<Transform>() { animator.GetBoneTransform(HumanBodyBones.LeftHand) };
             dynamicBones[0].m_Damping = 0.1f;
             dynamicBones[0].m_Elasticity = 0.022f;
             dynamicBones[0].m_Inert = 1;            
@@ -50,10 +54,26 @@ public class SymIKHandler : MonoBehaviour
             dynamicBones[1] = rightShoulderAnchor.gameObject.AddComponent<DynamicBone>();
 
             dynamicBones[1].m_Root = rightShoulderAnchor;
-            dynamicBones[1].m_Exclusions = new List<Transform>() { rightHand };
+            dynamicBones[1].m_Exclusions = new List<Transform>() { animator.GetBoneTransform(HumanBodyBones.RightHand) };
             dynamicBones[1].m_Damping = 0.1f;
             dynamicBones[1].m_Elasticity = 0.022f;
             dynamicBones[1].m_Inert = 1;
+
+            //dynamicBones[2] = leftUpperLegAnchor.gameObject.AddComponent<DynamicBone>();
+
+            //dynamicBones[2].m_Root = leftUpperLegAnchor;
+            //dynamicBones[2].m_Exclusions = new List<Transform>() { animator.GetBoneTransform(HumanBodyBones.LeftFoot) };
+            //dynamicBones[2].m_Damping = 0.1f;
+            //dynamicBones[2].m_Elasticity = 0.022f;
+            //dynamicBones[2].m_Inert = 1;
+
+            //dynamicBones[3] = rightUpperLegAnchor.gameObject.AddComponent<DynamicBone>();
+
+            //dynamicBones[3].m_Root = rightUpperLegAnchor;
+            //dynamicBones[3].m_Exclusions = new List<Transform>() { animator.GetBoneTransform(HumanBodyBones.RightFoot) };
+            //dynamicBones[3].m_Damping = 0.1f;
+            //dynamicBones[3].m_Elasticity = 0.022f;
+            //dynamicBones[3].m_Inert = 1;
         }
     }
 
@@ -62,9 +82,14 @@ public class SymIKHandler : MonoBehaviour
 
         localAngularVelocity = transform.InverseTransformDirection(rb.angularVelocity);
 
+        float stiff = Mathf.Lerp(0, 1, Mathf.InverseLerp(3, 10, Mathf.Abs(localAngularVelocity.y) + Mathf.Abs(localAngularVelocity.x)));
+
         foreach (DynamicBone bone in dynamicBones)
         {
-            bone.m_Stiffness =  Mathf.InverseLerp(3, 10, Mathf.Abs(localAngularVelocity.y) + Mathf.Abs(localAngularVelocity.x)); //energyLevel;
+            bone.m_Stiffness = stiff;
+            //if (behaviour.grounded)
+            //if (bone == dynamicBones[2] || bone == dynamicBones[3])
+            //    bone.m_Stiffness = 1;
             bone.UpdateParameters();
         }
 
@@ -75,15 +100,12 @@ public class SymIKHandler : MonoBehaviour
     {       
         //Main
         {
-
-
             lookDir = Vector3.Lerp(lookDir, (cameraControl.characterTargetingPosition - headBone.position).normalized, Time.deltaTime * 5);
             lookPosition = headBone.position + lookDir;
             animator.SetLookAtPosition(lookPosition);
 
             float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);            
             animator.SetLookAtWeight(t, .5f, .8f, 1, 1f);
-
         }
 
         //Foot IK

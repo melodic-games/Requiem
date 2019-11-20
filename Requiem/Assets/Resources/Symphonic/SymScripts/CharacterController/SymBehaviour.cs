@@ -27,7 +27,7 @@ public class SymBehaviour : MonoBehaviour
     public float playerHeight = 1.8f;
     public float colliderRadius = .25f;
     public bool grounded = false;
-    public Vector3 groundNormal;
+    public Vector3 surfaceNormal;
     public bool crouching = false;
     public float energyLevel = 0f;
     public bool chargingEnergy = false;
@@ -50,8 +50,8 @@ public class SymBehaviour : MonoBehaviour
     //Physics   
     public float rbVelocityMagnatude;
     public Vector3 rbVelocityNormalized;
-    public float groundVerticalSpeed;
-    public float groundTraversalSpeed;
+    public float surfaceVerticalSpeed;
+    public float surfaceTraversalSpeed;
     public Vector3 localAngularVelocity;
 
     public bool intangible = false;
@@ -59,6 +59,7 @@ public class SymBehaviour : MonoBehaviour
     public float enableGravity;
     public GravityManager gravityManager;
     public Vector3 gravity = Vector3.down;   
+    public Vector3 gravityRaw = Vector3.down;   
       
     private void Start()
     {
@@ -88,7 +89,7 @@ public class SymBehaviour : MonoBehaviour
         capsuleCollider.material = phyMat;
 
         gravityManager = FindObjectOfType<GravityManager>();
-        rb.maxAngularVelocity = 20;
+        rb.maxAngularVelocity = 40;
 
         CreateStateMachine();
 
@@ -155,7 +156,7 @@ public class SymBehaviour : MonoBehaviour
 
                 if (gravityManager != null)
                 {
-                    gravity = gravityManager.ReturnGravity(transform, transform.up * playerHeight * .5f);
+                    gravity = gravityRaw = gravityManager.ReturnGravity(transform, transform.up * playerHeight * .5f);
                 }
                 else
                 {
@@ -177,17 +178,21 @@ public class SymBehaviour : MonoBehaviour
                 //Ground check
                 {
                     //Find the direction that we check for the ground using last frames groundNormal if wall run is enabled                
-                    Vector3 groundCheckDirection = Vector3.Lerp(gravity.normalized, gravity.magnitude * -groundNormal, wallRun).normalized;
+                    Vector3 groundCheckDirection = Vector3.Lerp(gravity.normalized, gravity.magnitude * -surfaceNormal, wallRun).normalized;
 
                     //Preform raycast and grab Surface Data
                     {
 
-                        Vector3 pos = transform.position + transform.up * playerHeight *.5f;
-                        float dist = playerHeight;
+                        Vector3 pos = transform.position + -groundCheckDirection * playerHeight *.5f;
+                        //Vector3 pos = transform.position + transform.up * playerHeight *.5f;
 
-                        Debug.DrawRay(pos, groundCheckDirection * dist, Color.red);
+                        float dist = playerHeight;                        
 
-                        groundIsBelow = Physics.Raycast(pos, groundCheckDirection, out groundHit, dist, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+                        groundIsBelow = Physics.Raycast(pos, groundCheckDirection, out groundHit, dist, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore);
+
+                        Debug.DrawLine(pos, groundHit.point, Color.red);
+
+                        Debug.DrawRay(groundHit.point, groundHit.normal, Color.blue);
                     }
                 }
 
@@ -195,10 +200,10 @@ public class SymBehaviour : MonoBehaviour
                 {
                     if (groundIsBelow)
                     {
-                        groundNormal = groundHit.normal;      
+                        surfaceNormal = groundHit.normal;      
 
                         //Gravity redirection from wall running with new ground normal                                 
-                        gravity = Vector3.Lerp(gravity, gravity.magnitude * -groundNormal, wallRun);    
+                        gravity = Vector3.Lerp(gravity, gravity.magnitude * -surfaceNormal, wallRun);    
                         
                         coyoteTime = 0;
                     }
@@ -219,7 +224,7 @@ public class SymBehaviour : MonoBehaviour
         { 
             locomotionInputInterupt = false;
 
-            if (landingLag < landingLagMax)
+            if (landingLag < landingLagMax & grounded)
                 locomotionInputInterupt = true;
         }
 
@@ -245,7 +250,7 @@ public class SymBehaviour : MonoBehaviour
         
         if (!grounded)
         {
-            groundNormal = collision.GetContact(0).normal;
+            surfaceNormal = collision.GetContact(0).normal;
             rb.angularVelocity = Vector3.zero;
 
 
@@ -257,13 +262,13 @@ public class SymBehaviour : MonoBehaviour
             }
 
             //Check if we should ground the character normally, or if the character should stick to walls
-            if (Vector3.Dot(groundNormal, -gravity.normalized) < .5f)// && energyLevel == 1
+            if (Vector3.Dot(surfaceNormal, -gravity.normalized) < .5f)// && energyLevel == 1
             {
                 wallRun = 1;
 
                 //Reset rotation on ground on impact to stick to walls                
                 Vector3 piviot = transform.position + transform.up * playerHeight * .5f;
-                transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, groundNormal), groundNormal);
+                transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, surfaceNormal), surfaceNormal);
                 transform.position = piviot - transform.up * playerHeight * .5f;
             }
 
@@ -271,7 +276,7 @@ public class SymBehaviour : MonoBehaviour
             landingType = 0;
 
             //handle landing lag
-            if (Vector3.Dot(rbVelocityNormalized, groundNormal) < -0.85f && rbVelocityMagnatude > 40)
+            if (Vector3.Dot(rbVelocityNormalized, surfaceNormal) < -0.85f && rbVelocityMagnatude > 40)
             {
                 //landingLag = 0;
                 landingLagMax = 1;
@@ -285,8 +290,8 @@ public class SymBehaviour : MonoBehaviour
             }
 
             //recalulate ground speeds relative to the collission surface now that it has updated
-            groundVerticalSpeed = Vector3.Dot(rb.velocity, groundNormal);
-            groundTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(groundVerticalSpeed);
+            surfaceVerticalSpeed = Vector3.Dot(rb.velocity, surfaceNormal);
+            surfaceTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(surfaceVerticalSpeed);
         }
 
         //Run Module Specific Collission 
@@ -297,11 +302,11 @@ public class SymBehaviour : MonoBehaviour
     {
         if (!grounded)
         {
-            groundNormal = collision.GetContact(0).normal;
+            surfaceNormal = collision.GetContact(0).normal;
 
             //recalulate ground speeds relative to the collission surface now that it has updated
-            groundVerticalSpeed = Vector3.Dot(rb.velocity, groundNormal);
-            groundTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(groundVerticalSpeed);
+            surfaceVerticalSpeed = Vector3.Dot(rb.velocity, surfaceNormal);
+            surfaceTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(surfaceVerticalSpeed);
         }
 
         //Run Module Specific Collission 

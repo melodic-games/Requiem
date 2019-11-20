@@ -32,7 +32,7 @@ public class SymCameraHelper : MonoBehaviour
     {        
         cameraControl.lerpSpeed = Mathf.Lerp(0, cameraControl.lerpSpeed, lerpValue);
     }
-   
+
     void Update()
     {
         //adjust how the player should appear on screen depending on state.  
@@ -86,21 +86,26 @@ public class SymCameraHelper : MonoBehaviour
 
         }
 
-        //Camera follows gravity curving
+        //Camera follows upvector curving        
         {
-
-            //gravityDelta = previousgravity - gravity;
-
-            //cameraControl.targetRotation += gravityDelta
+            if (behaviour.grounded && Vector3.Dot(cameraControl.characterUpVectorPrevious, behaviour.surfaceNormal) > .7f)
+            {
+                cameraControl.characterUpVectorPrevious = cameraControl.characterUpVector;
+                cameraControl.characterUpVector = Vector3.Lerp(cameraControl.characterUpVector, transform.up, .1f);
+            }
+            else //reset values
+            {
+                cameraControl.characterUpVector = transform.up;
+                cameraControl.characterUpVectorPrevious = transform.up;
+            }
         }
-
 
 
         //CameraShake from turbulence
         {
             if (!behaviour.grounded && behaviour.flightEnabled)
             {
-                //CauseCameraShake(.025f * Mathf.InverseLerp(20, 60, Mathf.Abs(behaviour.groundVerticalSpeed)));
+                CauseCameraShake(.025f * Mathf.InverseLerp(20, 60, Mathf.Abs(behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, behaviour.gravityRaw.normalized))));                                                                   
             }
         }
 
@@ -115,7 +120,7 @@ public class SymCameraHelper : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (behaviour != null)
-            CauseCameraShake(behaviour.rbVelocityMagnatude / 20);
+            CauseCameraShake(behaviour.rbVelocityMagnatude / 10 );
     }
 
     public void CameraBounce(Collision collision)
@@ -141,7 +146,7 @@ public class SymCameraHelper : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        float speedAlongContactNormal = behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.groundNormal);
+        float speedAlongContactNormal = behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.surfaceNormal);
 
         //Visual Effects
         if (speedAlongContactNormal > 20)

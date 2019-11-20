@@ -6,7 +6,7 @@ public class TrailControl : MonoBehaviour
     private TrailRenderer[] trailRenderers = new TrailRenderer[] { null, null };
     public SymBehaviour behaviour;
     public float widthBase = 0.05f;
-    private float velocityScale;
+    private float scale;
     public float beginTrailSpeed = 30;
     public float trailGrowRange = 30;
 
@@ -34,10 +34,12 @@ public class TrailControl : MonoBehaviour
                       
         if (behaviour != null)
         {                                                   
-            velocityScale = Mathf.InverseLerp(beginTrailSpeed, beginTrailSpeed + trailGrowRange, behaviour.rbVelocityMagnatude);
+            scale = Mathf.InverseLerp(beginTrailSpeed, beginTrailSpeed + trailGrowRange, behaviour.rbVelocityMagnatude);
+            if (behaviour.controlSource.thrustInput != 1)
+            scale *= Mathf.InverseLerp(10,0,Mathf.Abs(behaviour.localAngularVelocity.y));
             foreach(TrailRenderer t in trailRenderers)
             {
-                t.time = Mathf.Lerp(0,0.6f,velocityScale);
+                t.time = Mathf.Lerp(0, 1f,scale);
             }
             
         }            

@@ -2,7 +2,7 @@
 
 public class SymEffectControl : MonoBehaviour
 {
-    public ParticleSystem ps;
+    public ParticleSystem chargeParticleSystem;
     public bool isActive;
     public SymBehaviour behaviour;
     public Transform chestAnchor;
@@ -10,12 +10,13 @@ public class SymEffectControl : MonoBehaviour
 
     // Start is called before the first frame update
     void Start()
-    {        
-        var main = ps.main;
-        var shape = ps.shape;
-        var emission = ps.emission;
+    {
+        chargeParticleSystem.transform.parent = null;
+        var main = chargeParticleSystem.main;
+        var shape = chargeParticleSystem.shape;
+        var emission = chargeParticleSystem.emission;
         main.maxParticles = 100;
-        ps.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear);
+        chargeParticleSystem.Stop(false,ParticleSystemStopBehavior.StopEmittingAndClear);
         main.duration = 3;
 
         behaviour = GetComponent<SymBehaviour>();
@@ -44,12 +45,12 @@ public class SymEffectControl : MonoBehaviour
             Explode();
         }
 
-        if (ps != null)
+        if (chargeParticleSystem != null)
         {
-            ps.gameObject.transform.rotation = Quaternion.identity;
-            var main = ps.main;
-            var shape = ps.shape;
-            var emission = ps.emission;
+            chargeParticleSystem.gameObject.transform.rotation = Quaternion.identity;
+            var main = chargeParticleSystem.main;
+            var shape = chargeParticleSystem.shape;
+            var emission = chargeParticleSystem.emission;
 
             if (isActive)
             {
@@ -58,11 +59,11 @@ public class SymEffectControl : MonoBehaviour
                 main.startSpeed = -4;
                 shape.radius = 2;
                 emission.rateOverTime = Mathf.Lerp(0, 40, 1);//33.42f;
-                if (!ps.isPlaying) ps.Play();
+                if (!chargeParticleSystem.isPlaying) chargeParticleSystem.Play();
             }
             else
             {
-                ps.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+                chargeParticleSystem.Stop(false, ParticleSystemStopBehavior.StopEmitting);
             }
         }
 
@@ -70,8 +71,8 @@ public class SymEffectControl : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (ps != null)
-            ps.transform.position = chestAnchor.position;
+        if (chargeParticleSystem != null)
+            chargeParticleSystem.transform.position = chestAnchor.position;
     }
 
     void Explode()
@@ -89,14 +90,14 @@ public class SymEffectControl : MonoBehaviour
             Instantiate(particleExplosion, position, transform.rotation);
 
         //Explosion force              
-        SymUtils.ShockWave(position, behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.groundNormal), behaviour.rb);
+        SymUtils.ShockWave(position, behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.surfaceNormal), behaviour.rb);
        
     }
 
 
     private void OnCollisionEnter(Collision collision)
     {
-        float speedAlongContactNormal = behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.groundNormal);
+        float speedAlongContactNormal = behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.surfaceNormal);
 
         //Visual Effects
         if (speedAlongContactNormal > 20)

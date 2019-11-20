@@ -12,7 +12,8 @@ public class SymBaseModule : Module<SymBehaviour>
     public float moveAcceleration = 40;
     public float topSpeedCurrent = 10;    
     public float topSpeedMax = 100;    
-    private float topSpeedWalk = 10;
+    private float topSpeedWalk = 10;//was 10
+    private float topSpeedRun = 20;
 
     //StairSteping
     private float maxStepHeight = 0.7f; //KneeHeight of character
@@ -27,7 +28,7 @@ public class SymBaseModule : Module<SymBehaviour>
     private float dashTime = 0;
     private float dashDuration = .1f;
     private float dashInterupt = .05f;
-    private float dashWindup = .1f;
+    private float dashWindup = .05f;
 
     private bool accelerator = false;
     private float acceleratorTime = 0;
@@ -82,14 +83,14 @@ public class SymBaseModule : Module<SymBehaviour>
         //Reset Movement Values for when on ground          
         {                       
             jumpBuffer = jumpBufferMax;
-            topSpeedCurrent = Mathf.Max(owner.groundTraversalSpeed, topSpeedWalk);
+            topSpeedCurrent = Mathf.Max(owner.surfaceTraversalSpeed, topSpeedWalk);
 
-            if (Vector3.Dot(owner.groundNormal, -owner.gravity.normalized) < .5f)
+            if (Vector3.Dot(owner.surfaceNormal, -owner.gravity.normalized) < .5f)
             {
                 owner.wallRun = 1;
             }
 
-            if (owner.groundTraversalSpeed > 20)
+            if (owner.surfaceTraversalSpeed > 20)
             {
                 canRun = true;
                 acceleratorTime = acceleratorWindup;
@@ -157,6 +158,11 @@ public class SymBaseModule : Module<SymBehaviour>
             //Grounded adjustments and calulations
             if (owner.grounded)
             {
+                //Stop the physics engine from rotating the character while under direct control
+                {
+                    owner.rb.freezeRotation = true;
+                }
+
                 //Reset angular drag
                 {
                     owner.rb.angularDrag = 1000;
@@ -164,13 +170,19 @@ public class SymBaseModule : Module<SymBehaviour>
                         owner.rb.angularDrag = 3;
                 }
 
-                //Calulate the move direction, based on camera direction and input
+                //Calulate move direction, based on camera direction and input
                 {
-                    Vector3 movez = Vector3.Cross(Camera.main.transform.right, owner.groundNormal);
-                    Vector3 movex = -Vector3.Cross(Camera.main.transform.forward, owner.groundNormal);
 
-                    if (!owner.crouching || dashBuffer < dashBufferMax)
-                        moveDirection = Mathf.Clamp01(Mathf.Abs(verticalInput) + Mathf.Abs(horizontalInput)) * (movez * verticalInput + movex * horizontalInput).normalized;
+                    Transform camTransform = Camera.main.transform;
+                              
+                    Vector3 forward = Vector3.Lerp(camTransform.forward, -camTransform.up, Vector3.Dot(camTransform.forward, owner.surfaceNormal));                                   
+
+                    Vector3 movez = (forward - (owner.surfaceNormal * Vector3.Dot(forward, owner.surfaceNormal))).normalized;
+
+                    Vector3 movex = (camTransform.right - (owner.surfaceNormal * Vector3.Dot(camTransform.right, owner.surfaceNormal))).normalized;                   
+
+                    
+                        moveDirection = Mathf.Clamp01(Mathf.Abs(verticalInput) + Mathf.Abs(horizontalInput)) * (movez * verticalInput + movex * horizontalInput).normalized;                                                       
                 }
 
                 //Set Physics Material properties
@@ -195,38 +207,51 @@ public class SymBaseModule : Module<SymBehaviour>
                 //Wall running enabled by speed
                 {
                     owner.wallRun = Mathf.Min(owner.wallRun + Mathf.InverseLerp(20, 40, owner.rbVelocityMagnatude) * Time.deltaTime, 1);
-                }
-              
-                //owner.transform.rotation = Quaternion.LookRotation(Vector3.Cross(owner.transform.right, -owner.gravity), -owner.gravity);
+                }                             
 
                 //Character faces the move direction or velocity direction                                      
                 {
+
                     
+
+                    owner.rb.angularVelocity = Vector3.zero;
+
+                    Vector3 upwards = Vector3.Lerp(-owner.gravity.normalized, owner.surfaceNormal, owner.rbVelocityMagnatude * .1f);
+
                     if (moveDirectionMag > .1f && !owner.locomotionInputInterupt)
-                    {                                               
-                        owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(moveDirection, owner.groundNormal), Time.deltaTime * 5);                        
-                        owner.rb.angularVelocity = Vector3.zero;                                         
-                    }
-                    else //if (owner.rbVelocityMagnatude > 1)
                     {
-                        owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(owner.rbVelocityNormalized, owner.groundNormal), Time.deltaTime * 5);                        
+                        owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(moveDirection, upwards), Time.deltaTime * 5);                                                                                         
+                    }
+                    else
+                    {                      
+                                                                                                             
+                        Quaternion rotation = Quaternion.LookRotation((owner.rbVelocityNormalized - (upwards * Vector3.Dot(owner.rbVelocityNormalized, upwards))).normalized, upwards);
+
+                        owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, rotation, Time.deltaTime * 5);
+                        
                     }
 
                 }
 
-                //WrapAroundSurfaces                
-                if (owner.wallRun == 1)
+                //WrapAroundSurfaces                                
                 {
-                    owner.rb.velocity = Vector3.Cross(Vector3.Cross(owner.rb.velocity.normalized, -owner.groundNormal), owner.groundNormal) * owner.rb.velocity.magnitude;
 
-                    //if (owner.groundIsBelow)
-                    //    owner.transform.position = owner.groundHit.point;
+                    Vector3 newVelocity = Vector3.Cross(Vector3.Cross(owner.surfaceNormal, owner.rb.velocity.normalized), owner.surfaceNormal) * owner.rb.velocity.magnitude;
 
-                    //int layerMask = ~((1 << 8) | (1 << 2) | (1 << 10));
-                    //RaycastHit hitInfo;
+                    if (Vector3.Dot(owner.rb.velocity, newVelocity) > .866f)
+                    {
+                        owner.rb.velocity = Vector3.Slerp(owner.rb.velocity, newVelocity, owner.wallRun);
 
-                    //if (Physics.Raycast(owner.transform.position + owner.transform.up, -owner.transform.up, out hitInfo, 10, layerMask))
-                    //    owner.transform.position = Vector3.Lerp(owner.transform.position, hitInfo.point, Time.deltaTime * 5);
+                        //if (owner.groundIsBelow)
+                        //    owner.transform.position = owner.groundHit.point;                        
+
+                        if (Physics.Raycast(owner.transform.position + owner.transform.up, -owner.transform.up, out RaycastHit hitInfo, 10, ~((1 << 8) | (1 << 2) | (1 << 10))))
+                            owner.transform.position = Vector3.Lerp(owner.transform.position, hitInfo.point, Time.deltaTime * 5);
+                    }
+                    else
+                    {
+                        Debug.Log("Angle to great, aborting wrap around!");
+                    }
 
                 }
 
@@ -238,14 +263,14 @@ public class SymBaseModule : Module<SymBehaviour>
 
                 //canRun reset
                 {
-                    if (owner.rbVelocityMagnatude < 5) canRun = false;
+                    if (owner.rbVelocityMagnatude < topSpeedWalk * .5f) canRun = false;
                 }
 
                 //Accelerator
                 {
                     //AcceleratorTime Update
                     {
-                        if (canRun)
+                        if ((owner.rbVelocityMagnatude > topSpeedRun) || (canRun && owner.rbVelocityMagnatude > topSpeedWalk))
                             acceleratorTime += Time.deltaTime;
                         else
                             acceleratorTime = 0;
@@ -255,7 +280,7 @@ public class SymBaseModule : Module<SymBehaviour>
 
                     //Accelerator Calulation        
                     {
-                        if (acceleratorTime >= acceleratorWindup && canRun)
+                        if (acceleratorTime >= acceleratorWindup)
                         {
                             accelerator = true;
                         }
@@ -299,21 +324,30 @@ public class SymBaseModule : Module<SymBehaviour>
                     else
                     {
                         topSpeedCurrent = topSpeedWalk;
-                        if (canRun) topSpeedCurrent *= 2;
+                        if (canRun) topSpeedCurrent = topSpeedRun;
                         if (owner.crouching) topSpeedCurrent = topSpeedMax;
                     }
 
                 }
 
-                //Control Drag                
+                //Control Drag and clamp top speed                
                 {                                     
                     owner.rb.drag = 0;
+                    if (owner.rbVelocityMagnatude < topSpeedRun + 1 && moveDirection == Vector3.zero)
+                        owner.rb.drag = 5;
+
                     owner.rb.velocity = Vector3.ClampMagnitude(owner.rb.velocity, topSpeedCurrent);                    
                 }
 
             }
             else //Airborn
             {
+
+                //Allow the physics engine to rotate the character
+                {
+                    owner.rb.freezeRotation = false;
+                }
+
                 //Reset angualr drag
                 {
                     owner.rb.angularDrag = 3;
@@ -347,11 +381,6 @@ public class SymBaseModule : Module<SymBehaviour>
                 {
                     owner.energyLevel = Mathf.Min(owner.energyLevel + Time.deltaTime, 1);
                     owner.chargingEnergy = true;
-                }
-                else
-                {
-                    owner.energyLevel = Mathf.Max(owner.energyLevel - Time.deltaTime, 0);
-                    owner.chargingEnergy = false;
                 }
 
             }
@@ -393,13 +422,13 @@ public class SymBaseModule : Module<SymBehaviour>
                         dashBuffer = Mathf.Infinity;
                         if (moveDirectionMag > .1f)
                         {                            
-                            GameManager.manager.PauseGameForDuration(dashWindup);
-                            //owner.cameraHelper.CauseCameraShake(5);
+                            //GameManager.manager.PauseGameForDuration(dashWindup);
+                            owner.cameraHelper.CauseCameraShake(5);
                             owner.rb.velocity = moveDirection.normalized * Mathf.Max(dashSpeed,owner.rbVelocityMagnatude);                            
                             owner.rbVelocityNormalized = owner.rb.velocity.normalized;
                             float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
                             //Disable camera lerp when pushed back by a shockwave, but behind the character.
-                            if (owner.rbVelocityMagnatude > dashSpeed)
+                            //if (owner.rbVelocityMagnatude > dashSpeed)
                             { 
                                 owner.cameraHelper.CameraSetLerp((dot + 1) * .5f);
                             }
@@ -413,7 +442,7 @@ public class SymBaseModule : Module<SymBehaviour>
                             topSpeedCurrent = Mathf.Max(dashSpeed, owner.rbVelocityMagnatude);
                             owner.locomotionInputInterupt = true;
                             owner.SendMessage("Explode");
-                            Debug.Log("<size=25>Dash!</size>");
+                            Debug.Log("Dash!");
                         }
 
                     }
@@ -421,7 +450,7 @@ public class SymBaseModule : Module<SymBehaviour>
                 //Maintain Dash
                 if (dashing)
                 {                  
-                    Vector3 dir = Vector3.Cross(Vector3.Cross(owner.rbVelocityNormalized, -owner.groundNormal), owner.groundNormal);
+                    Vector3 dir = Vector3.Cross(Vector3.Cross(owner.rbVelocityNormalized, -owner.surfaceNormal), owner.surfaceNormal);
                     owner.rb.velocity = dir * Mathf.Max(dashSpeed, owner.rbVelocityMagnatude);
                     owner.rb.drag = 0;
                 }
@@ -430,22 +459,27 @@ public class SymBaseModule : Module<SymBehaviour>
             //Jumping.
             if (!owner.locomotionInputInterupt)
                 if (jumpBuffer < jumpBufferMax)
-                {                   
+                {                            
                     jumpBuffer = Mathf.Infinity;
-                    owner.grounded = false;          
+                    owner.grounded = false;
+
+                    //Allow the physics engine to rotate the character                    
+                    owner.rb.freezeRotation = false;
+                    
                     if (!owner.crouching || owner.energyLevel != 1)
                     {
-                        owner.rb.velocity += owner.groundNormal * jumpPower;
-                        Debug.Log("<size=25>Jump</size>");
+                        owner.rb.velocity += owner.surfaceNormal * jumpPower;
+                        Debug.Log("Jump");
                     }
                     else
                     {
                         GameManager.manager.PauseGameForDuration(dashWindup);
-                        owner.rb.velocity += owner.groundNormal * 180;
+                        owner.rb.velocity += owner.surfaceNormal * 180;
                         owner.energyLevel = 0;
-                        Debug.Log("<size=25>Power Jump</size>");
+                        Debug.Log("Power Jump");
                         owner.stateMachine.ChangeModule(SymFlightModule.Instance);
                     }
+
                     owner.animator.SetTrigger("Jump");
                     owner.wallRun = 0;
                     owner.coyoteTime = owner.coyoteTimeMax;                                                                            
@@ -470,7 +504,7 @@ public class SymBaseModule : Module<SymBehaviour>
             }
 
             //Grip force
-            if (!owner.locomotionInputInterupt)
+            if (!owner.locomotionInputInterupt && !owner.crouching)
             {                
                 Vector3 force = SymUtils.RedirectForce(moveDirection, owner.rbVelocityNormalized, owner.rbVelocityMagnatude, traction);
                 owner.rb.AddForce(force * 2 , ForceMode.Acceleration);
@@ -511,34 +545,44 @@ public class SymBaseModule : Module<SymBehaviour>
 
     public override void OnCollisionEnter(SymBehaviour owner, Collision collision)
     {
-        if (!owner.grounded && Mathf.Sign(owner.groundVerticalSpeed) < 1)
-        {
-
-            //Character Effects
-            owner.grounded = true;
-
-            //Adjust accelerator             
-            if (owner.groundTraversalSpeed > 20)
+        if (!owner.grounded)
+            if (Mathf.Sign(owner.surfaceVerticalSpeed) < 1)
             {
-                canRun = true;
-                acceleratorTime = acceleratorWindup;
-            }
 
-            topSpeedCurrent = Mathf.Max(owner.groundTraversalSpeed, topSpeedWalk);
+                //Character Effects
+                owner.grounded = true;
+
+                //Adjust accelerator             
+                if (owner.surfaceTraversalSpeed > 20)
+                {
+                    canRun = true;
+                    acceleratorTime = acceleratorWindup;
+                }
+
+                topSpeedCurrent = Mathf.Max(owner.surfaceTraversalSpeed, topSpeedWalk);
             
 
-        }
+            }
+            else
+            {
+                Debug.Log("verticalSpeed !< 1");
+            }
 
     }
 
     public override void OnCollisionStay(SymBehaviour owner, Collision collision)
     {
         
-        if (!owner.grounded && Mathf.Sign(owner.groundVerticalSpeed) < 1)
-        {
-            //Character Effects            
-            owner.grounded = true;
-        }
+        if (!owner.grounded)
+            if (Mathf.Sign(owner.surfaceVerticalSpeed) < 1)
+            {
+                //Character Effects            
+                owner.grounded = true;
+            }
+            else
+            {
+                Debug.Log("verticalSpeed !< 1");
+            }
 
     }
 
