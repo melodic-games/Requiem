@@ -228,7 +228,7 @@ Material:
     - _RequireSplitLighting: 0
     - _SSRefractionProjectionModel: 0
     - _Shell: 5
-    - _ShellPower: 8.986265
+    - _ShellPower: 8.999998
     - _ShiverDirectionality: 0.5
     - _ShiverDrag: 0.2
     - _Smoothness: 0.5
@@ -283,7 +283,7 @@ Material:
     - Color_F45BAA85: {r: 0.019607844, g: 0.22352941, b: 0.4117647, a: 1}
     - Vector2_EBD0951F: {r: 1, g: 1, b: 0, a: 0}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BaseColor1: {r: 0.27299738, g: 0.27299738, b: 0.27299738, a: 0.99999976}
+    - _BaseColor1: {r: 0.2687983, g: 0.2687983, b: 0.2687983, a: 0.99999976}
     - _BaseColor2: {r: 0.9999992, g: 0.9999992, b: 0.9999992, a: 0.99999976}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 2293.2036, g: 817.2231, b: 0, a: 77.36854}
@@ -292,11 +292,11 @@ Material:
     - _DiffusionProfileAsset: {r: 0, g: 0, b: 0, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _EmissiveColor: {r: 484.3123, g: 172.59306, b: 0, a: 16.339825}
+    - _EmissiveColor: {r: 0.00000019195816, g: 0.000000068407736, b: 0, a: 0.0000000064763195}
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
-    - _ShellColor: {r: 0.01152612, g: 0.0041075307, b: 0, a: 0.00038887054}
+    - _ShellColor: {r: 3e-45, g: 3e-45, b: 0, a: 3e-45}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _ThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
     - _TransmittanceColor: {r: 1, g: 1, b: 1, a: 1}

@@ -283,7 +283,7 @@ public class SymGroundModule : Module<SymBehaviour>
                         owner.rb.drag = 0;
                     }
 
-                    if (owner.rbVelocityMagnatude < .1f && owner.moveDirection == Vector3.zero && !owner.crouching)
+                    if (owner.rbVelocityMagnatude < .5f && owner.moveDirection == Vector3.zero && !owner.crouching)
                     {                                                               
                         owner.phyMat.dynamicFriction = 1;
                         owner.phyMat.staticFriction = 1;
@@ -550,7 +550,7 @@ public class SymGroundModule : Module<SymBehaviour>
     {
 
         if (!owner.grounded)
-            if (Mathf.Sign(owner.surfaceVerticalSpeed) < 1)
+            if (owner.surfaceVerticalSpeed <= 0)
             {
                 //Character Effects            
                 owner.grounded = true;

@@ -273,7 +273,7 @@ Material:
     - Color_CB425DF9: {r: 0.45, g: 0.45, b: 0.45, a: 0}
     - Vector2_2AC04287: {r: 0.29, g: 0.16, b: 0, a: 0}
     - _BaseColor: {r: 0.4885263, g: 0.8867924, b: 0.38065147, a: 1}
-    - _BaseColor1: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor1: {r: 0.75, g: 0.75, b: 0.75, a: 1}
     - _BaseColor2: {r: 0, g: 0, b: 0, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0, g: 0, b: 0, a: 1}
