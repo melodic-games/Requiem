@@ -17,6 +17,8 @@ public class SymIKHandler : MonoBehaviour
     private Vector3 lookDir;
     private Transform headBone;
 
+    public Vector4 lookWeights = new Vector4(.8f, 1f, 1f, 1f);
+
     public bool useFootIK = false;
 
     private float leftFootWeight = 1;
@@ -100,12 +102,12 @@ public class SymIKHandler : MonoBehaviour
     {       
         //Main
         {
-            lookDir = Vector3.Lerp(lookDir, (cameraControl.characterTargetingPosition - headBone.position).normalized, Time.deltaTime * 5);
+            lookDir = Vector3.Lerp(lookDir, (cameraControl.characterTargetingPosition - headBone.position).normalized, Time.deltaTime * 2);
             lookPosition = headBone.position + lookDir;
             animator.SetLookAtPosition(lookPosition);
 
-            float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);            
-            animator.SetLookAtWeight(t, .5f, .8f, 1, 1f);
+            float t = Mathf.InverseLerp(10, 0, localAngularVelocity.magnitude);
+            animator.SetLookAtWeight(t, lookWeights.w, lookWeights.x, lookWeights.y, lookWeights.z);
         }
 
         //Foot IK

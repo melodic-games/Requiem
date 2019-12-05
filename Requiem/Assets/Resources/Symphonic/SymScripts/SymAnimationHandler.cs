@@ -23,9 +23,9 @@ public class SymAnimationHandler : MonoBehaviour
             {                                
                 animator.SetFloat("Speed", behaviour.rbVelocityMagnatude, 0.1f, Time.deltaTime);
                 animator.SetFloat("VerticalSpeed", behaviour.rbVelocityMagnatude * Vector3.Dot(behaviour.rbVelocityNormalized, -behaviour.gravity.normalized), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotZ", Mathf.Abs(behaviour.localAngularVelocity.z), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotX", Mathf.Abs(behaviour.localAngularVelocity.x), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotY", Mathf.Abs(behaviour.localAngularVelocity.y), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotZ", Mathf.Abs(behaviour.localAngularVelocity.z + behaviour.localKinematicAngularVelocity.z), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotX", Mathf.Abs(behaviour.localAngularVelocity.x + behaviour.localKinematicAngularVelocity.x), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotY", Mathf.Abs(behaviour.localAngularVelocity.y + behaviour.localKinematicAngularVelocity.y), 0.1f, Time.deltaTime);
                 animator.SetFloat("Drag", rb.drag / .2f, 0.3f, Time.deltaTime);
                 animator.SetFloat("DragDir", Vector3.Dot(behaviour.rbVelocityNormalized, -transform.forward), 0.1f, Time.deltaTime);                
                 animator.SetFloat("LandingType", behaviour.landingType);
@@ -39,7 +39,6 @@ public class SymAnimationHandler : MonoBehaviour
                 else
                     animator.SetFloat("Charge", 0, 0.1f, Time.deltaTime);
 
-
                 if (behaviour.crouching)
                     animator.SetFloat("Crouch", 1, 0.1f, Time.deltaTime);
                 else
@@ -49,6 +48,10 @@ public class SymAnimationHandler : MonoBehaviour
                     animator.speed = Mathf.InverseLerp(12, 30, behaviour.rbVelocityMagnatude) * 1f + 1;
                 else
                     animator.speed = 1;
+            }
+            else
+            {
+                print("no animator in animation handler");
             }
         }
         else

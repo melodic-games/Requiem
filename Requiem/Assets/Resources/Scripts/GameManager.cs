@@ -20,16 +20,29 @@ public class GameManager : MonoBehaviour
         pauseWaitCounter = 0;
     }
 
+    public void PauseToggle()
+    {
+        if (Time.timeScale == 0)
+            Time.timeScale = 1;
+        else
+            Time.timeScale = 0;
+    }
+
     private void Update()
     {
 
         if (manager == null) manager = this;
 
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            PauseToggle();
+        }
+
         pauseWaitCounter += Time.unscaledDeltaTime;
 
         if (pauseWaitCounter > pauseWaitTime)
         {
-            Time.timeScale = 1;
+            //Time.timeScale = 1;
         }
     }
 

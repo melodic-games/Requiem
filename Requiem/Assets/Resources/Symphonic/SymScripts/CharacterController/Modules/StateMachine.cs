@@ -20,12 +20,6 @@ namespace SymBehaviourModule
             currentModule.EnterModule(Owner);
         }
 
-        public void Update()
-        {
-            if (currentModule != null)
-                currentModule.UpdateModule(Owner);
-        }
-
         public void Locomotion()
         {         
             if (currentModule != null)
@@ -49,9 +43,7 @@ namespace SymBehaviourModule
     public abstract class Module<T>
     {       
 
-        public abstract void EnterModule(T owner);
-
-        public abstract void UpdateModule(T owner);
+        public abstract void EnterModule(T owner);      
 
         public abstract void Locomotion(T owner);
 

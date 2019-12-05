@@ -10,6 +10,7 @@ public class OperatorControl : MonoBehaviour
     private float lerp = 0;
     private Vector3 targetPosition = Vector3.zero;
     private Vector3 deviation;
+    private Vector3 overShoot = Vector3.zero;
     private float deviationScale;
     public float xOffsetRotation = 0;
     public float yOffsetRotation = 0;
@@ -32,11 +33,12 @@ public class OperatorControl : MonoBehaviour
 
     public TrailRenderer trailRenderer;
 
-    public SymphonicBehaviour symBehaviour;
+    public SymBehaviour symBehaviour;
 
     void Start()
     {
         gM = FindObjectOfType<GravityManager>();
+        symBehaviour = FindObjectOfType<SymBehaviour>();
 
         forwardDirection = transform.forward;
 
@@ -91,13 +93,24 @@ public class OperatorControl : MonoBehaviour
                 deviation = new Vector3(Mathf.Sin(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f, Mathf.Cos(Time.time * 1) * 0.2f) * (deviationScale + 1);
             }
 
-            Vector3 gravity = gM.ReturnGravity(transform, Vector3.zero).normalized;
+            Vector3 gravity;
+
+            if (symBehaviour.grounded)        
+            {
+                gravity = symBehaviour.gravity;
+            }
+            else
+            { 
+                gravity = gM.ReturnGravity(transform, Vector3.zero).normalized;
+            }
+
 
             //Movement mode behaviour        
             if (target != null)// move to target position with offset, reset worldPosition to current position, find facing directions
             {
                 worldPosition = transform.position;
-                targetPosition = target.position + localOffset;
+                overShoot = Vector3.Lerp(overShoot, targetVelocity * .1f, Time.deltaTime);
+                targetPosition = target.position + localOffset + overShoot;
                 forwardDirection = velNorm;
             }
 

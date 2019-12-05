@@ -38,20 +38,18 @@ public class SymCameraHelper : MonoBehaviour
         //adjust how the player should appear on screen depending on state.  
         {
             
-            if (behaviour.stateMachine.currentModule.GetType() == typeof(SymBaseModule))
+            if (behaviour.stateMachine.currentModule.GetType() == typeof(SymGroundModule))
             {
-                //cameraControl.upResetLerp = 10;
+                cameraControl.upResetLerp = 1;
+                camLocalOffset = headHeight;
+                camZoomDistanceMin = 5;
+
                 if (behaviour.crouching && behaviour.rbVelocityMagnatude < 20 && behaviour.grounded)
                 {
-                    camZoomDistanceMin = 2;
+                    camZoomDistanceMin = 4;
                     camLocalOffset = Vector3.zero;
                 }
-                else
-                {
-                    camLocalOffset = headHeight;
-                    camZoomDistanceMin = 5;
-                }
-
+            
                 camZoomDistanceMax = Mathf.Lerp(camZoomDistanceMax, Mathf.Lerp(5, 15, Mathf.InverseLerp(35, 40, behaviour.rbVelocityMagnatude)), Time.deltaTime);        
             }
             
@@ -59,10 +57,17 @@ public class SymCameraHelper : MonoBehaviour
             {
                 cameraControl.upResetLerp = 1;
                 camLocalOffset = Vector3.zero;
-                camZoomDistanceMin = 4;
-                if (behaviour.energyLevel == 1 && behaviour.rbVelocityMagnatude < 20)
-                    camZoomDistanceMin = 1;
-                camZoomDistanceMax = 10;
+                
+                if (behaviour.chargingEnergy)
+                {
+                    camZoomDistanceMin = 2;
+                    camZoomDistanceMax = 5;
+                }
+                else
+                {
+                    camZoomDistanceMax = 10;
+                    camZoomDistanceMin = 4;                
+                }
             }
 
             if (cameraControl != null)
@@ -88,6 +93,8 @@ public class SymCameraHelper : MonoBehaviour
 
         //Camera follows upvector curving        
         {
+            cameraControl.curveRotationScalar = behaviour.wallRun;
+
             if (behaviour.grounded && Vector3.Dot(cameraControl.characterUpVectorPrevious, behaviour.surfaceNormal) > .7f)
             {
                 cameraControl.characterUpVectorPrevious = cameraControl.characterUpVector;
@@ -138,9 +145,14 @@ public class SymCameraHelper : MonoBehaviour
         RaycastHit bounceFutureCheck;
         if (Physics.Raycast(transform.position, reflect, out bounceFutureCheck, 1000, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore))
         {
-            cameraControl.cameraTargetingPosition = bounceFutureCheck.point;
-            cameraControl.trackLerpScale = .1f;
-        }                          
+            cameraControl.cameraDirectionResetPosition = bounceFutureCheck.point;
+            cameraControl.directionResetLerpValue = .1f;
+        }
+        else
+        {
+            cameraControl.cameraDirectionResetPosition = hitPoint + reflect * 1000;
+            cameraControl.directionResetLerpValue = .1f;
+        }
      
     }
 

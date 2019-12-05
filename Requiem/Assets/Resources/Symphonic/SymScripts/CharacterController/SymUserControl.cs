@@ -5,7 +5,7 @@ public class SymUserControl : SymControlSource<SymBehaviour>  {
 
     public override void CollectInput()
     {
-        if (Time.timeSinceLevelLoad > 5)
+        if (Time.timeSinceLevelLoad > 5 && Time.timeScale > 0)
         {
             //Focus Input
             {
@@ -15,11 +15,6 @@ public class SymUserControl : SymControlSource<SymBehaviour>  {
             //Jump
             {
                 jump = Input.GetButtonDown("Jump/Bounce");
-            }
-
-            //Bounce
-            {
-                bounce = Input.GetButtonDown("Jump/Bounce");
             }
 
             //Crouching
@@ -51,9 +46,6 @@ public class SymUserControl : SymControlSource<SymBehaviour>  {
                 boost = false;
                 boost_ResponceDisabled = false;
             }
-
-            rollAxisInput = Input.GetAxis("Horizontal");
-            pitchAxisInput = Input.GetAxis("Vertical");
 
             horizontalInput = Input.GetAxis("Horizontal");
             verticalInput = Input.GetAxis("Vertical");

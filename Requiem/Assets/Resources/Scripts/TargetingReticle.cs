@@ -25,7 +25,7 @@ public class TargetingReticle : MonoBehaviour
         if(cameraControl != null)
         tracking = cameraControl.tracking;
 
-        worldToScreenVector = Camera.main.WorldToScreenPoint(cameraControl.cameraTargetingPosition);
+        worldToScreenVector = Camera.main.WorldToScreenPoint(cameraControl.cameraObjectTrackingPosition);
 
         position.x = worldToScreenVector.x;
         position.y = Screen.height - worldToScreenVector.y;

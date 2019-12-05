@@ -11,6 +11,12 @@ public class SymUtils
         return crossVector * velocityMagnatuide * Vector3.Dot(crossVector, -velocityNormal) * scale;
     }
 
+    public static void SetRotationAroundOffset(Transform myTransform, Vector3 localOffset, Quaternion rotation)
+    {                  
+        myTransform.position = (myTransform.position + myTransform.rotation * localOffset) - rotation * localOffset;
+        myTransform.rotation = rotation;
+    }
+
     public static void ShockWave(Vector3 location, float force, Rigidbody sourceObject)
     {
         //float force = 25;

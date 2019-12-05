@@ -870,8 +870,8 @@ public class SymphonicBehaviour : MonoBehaviour {
                 RaycastHit bounceFutureCheck;
                 if (Physics.Raycast(transform.position, reflect, out bounceFutureCheck, 1000, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore))
                 {
-                    cameraControl.cameraTargetingPosition = bounceFutureCheck.point;
-                    cameraControl.trackLerpScale = .1f;
+                    cameraControl.cameraObjectTrackingPosition = bounceFutureCheck.point;
+                    cameraControl.objectTrackingLerpValue = .1f;
                 }
                 else
                 {

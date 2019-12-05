@@ -7,7 +7,8 @@ public class CameraControl : MonoBehaviour {
     //target information
     [Header("Target Information")]    
     public Vector3 characterTargetingPosition = Vector3.zero;
-    public Vector3 cameraTargetingPosition = Vector3.zero;
+    public Vector3 cameraObjectTrackingPosition = Vector3.zero;
+    public Vector3 cameraDirectionResetPosition = Vector3.zero;
     public Transform[] followTargets;
     public Transform[] trackTargets;
     public bool followingTarget = true;
@@ -25,8 +26,9 @@ public class CameraControl : MonoBehaviour {
     private Vector2 joystickMovement = Vector2.zero;
     public Vector3 localOffset = Vector3.zero;   
     public float lerpSpeed = 20;  
-    public float trackLerpScale = 0;
-    public float disableTracking = 1;
+    public float objectTrackingLerpValue = 0;
+    public float directionResetLerpValue = 0;
+    public float curveRotationScalar = 0;
     public Vector3 upVector = Vector3.up;
     public Vector3 characterUpVector = Vector3.up;
     public Vector3 characterUpVectorPrevious = Vector3.up;
@@ -40,7 +42,7 @@ public class CameraControl : MonoBehaviour {
     public float zoomDistanceMin = 5;
     public float zoomDistanceMax = 10;
 
-    public bool lockCursor;
+    public bool overrideCursorLock;
     public float shakeTime = 0;
     
     [Range(0,20)]
@@ -79,9 +81,9 @@ public class CameraControl : MonoBehaviour {
         if (followTargets[0] == null)
             followTargets[0] = GameObject.FindGameObjectWithTag("Player").transform;
         
-            orbitPoint = transform.position - transform.forward * 2;
+            orbitPoint = transform.position + transform.forward * 5;
 
-            zoom = 5;
+            zoom = 5;        
     }
 
 
@@ -101,14 +103,17 @@ public class CameraControl : MonoBehaviour {
             //shakeMagnatude = Mathf.Clamp01(shakeMagnatude);
         }
 
-        if (Time.timeSinceLevelLoad > 5)
         {
-            {
-                if (lockCursor)
-                    Cursor.lockState = CursorLockMode.Locked;
-                else
-                    Cursor.lockState = CursorLockMode.None;
-            }
+
+            if (Time.timeScale == 0 || overrideCursorLock)
+                Cursor.lockState = CursorLockMode.None;
+            else
+                Cursor.lockState = CursorLockMode.Locked;
+        }
+
+        //if (Time.timeSinceLevelLoad > 5)
+        {
+
 
             //Update Physics Values
             {
@@ -120,13 +125,17 @@ public class CameraControl : MonoBehaviour {
             }
 
             //record mouse and gamepad input
-            if (Time.timeSinceLevelLoad > 1)
+            if (Time.timeScale != 0 && Time.unscaledDeltaTime < .1)
             {
                 mouseMovement.x = Input.GetAxis("Mouse X") * mouseSensitivity * Time.unscaledDeltaTime;
                 mouseMovement.y = -Input.GetAxis("Mouse Y") * mouseSensitivity * Time.unscaledDeltaTime;
 
                 joystickMovement.x = Input.GetAxis("Horizontal2") * joystickSensitivity * Time.unscaledDeltaTime;
                 joystickMovement.y = Input.GetAxis("Vertical2") * joystickSensitivity * Time.unscaledDeltaTime;
+            }
+            else
+            {
+                joystickMovement.y = joystickMovement.x = mouseMovement.y = mouseMovement.x = 0;                
             }
 
             //Player Rotates Camera 
@@ -173,7 +182,7 @@ public class CameraControl : MonoBehaviour {
 
                 curveRotation = Rotation1 * Quaternion.Inverse(Rotation2) * targetRotation;
 
-                targetRotation = curveRotation;// Quaternion.Slerp(targetRotation, curveRotation, Time.unscaledDeltaTime * 10);
+                targetRotation = Quaternion.Slerp(targetRotation, curveRotation, curveRotationScalar);
 
             }
             else
@@ -207,20 +216,19 @@ public class CameraControl : MonoBehaviour {
                     followPosAverage /= count;
                 }
 
-
                 {
                     float followTargetSpeed = 0;
 
-                    if (Time.unscaledDeltaTime > 0)
+                    if (Time.deltaTime > 0)
                     {
-                        followTargetSpeed = (followPosAverage - followPreviousPosition).magnitude / Time.unscaledDeltaTime;
+                        followTargetSpeed = (followPosAverage - followPreviousPosition).magnitude / Time.deltaTime;
 
                         followPreviousPosition = followPosAverage;
                     }
 
                     //set camera orbitpoint position                                       
                     {
-                        orbitPoint = Vector3.Lerp(orbitPoint, followPosAverage + targetRotation * localOffset, Time.unscaledDeltaTime * lerpSpeed);
+                        orbitPoint = Vector3.Lerp(orbitPoint, followPosAverage + targetRotation * localOffset, Time.deltaTime * lerpSpeed);
                     }
 
                     //caluate zoom (displacement from orbit point)
@@ -234,16 +242,13 @@ public class CameraControl : MonoBehaviour {
                             int layerMask = ~((1 << 8) | (1 << 2) | (1 << 10)); //layerMask = ~layerMask;
 
                             if (Physics.Raycast(orbitPoint, -(targetRotation * Vector3.forward), out hit, zoom, layerMask, QueryTriggerInteraction.Ignore))
-                                zoom = hit.distance;
+                                zoom = hit.distance ;
                         }
                     }
 
                     //set camera position                                       
-                    {
-                        float disable = Mathf.Clamp01((Time.timeSinceLevelLoad - 5) / 10);
-
-                        transform.position = Vector3.Lerp(transform.position, orbitPoint - (targetRotation * Vector3.forward * (zoom - .2f)), disable);
-                        //transform.position = targets[followIndexPosition].transform.position - (targetRotation * Vector3.forward * (zoom - .2f));
+                    {                       
+                        transform.position =  orbitPoint - (targetRotation * Vector3.forward * (zoom - 1));                   
                     }
 
                 }
@@ -265,7 +270,7 @@ public class CameraControl : MonoBehaviour {
 
                     int layerMask = ~((1 << 8) | (1 << 2) | (1 << 10));
                     //if (Physics.Raycast(transform.position, transform.forward, out hit, Mathf.Infinity, layerMask))//if we hit something
-                    if (Physics.SphereCast(transform.position, 3f, transform.forward, out hit, Mathf.Infinity, layerMask))
+                    if (Physics.SphereCast(transform.position, 3f, transform.forward, out hit, Mathf.Infinity, layerMask,QueryTriggerInteraction.Collide))
                     {
                         if (hit.transform.gameObject.tag == "Trackable")
                         {
@@ -280,10 +285,10 @@ public class CameraControl : MonoBehaviour {
                 }
             }
 
-            //Object Tracking
+            //Smooth Object Tracking
             {
 
-                Vector3 trackPosAverage = Vector3.zero;
+                Vector3 trackTargetsPosAverage = Vector3.zero;
 
                 //Get the average position between targets
                 if (trackTargets[0] != null)
@@ -291,60 +296,79 @@ public class CameraControl : MonoBehaviour {
                     int count = 0;
                     foreach (Transform t in trackTargets)
                     {
-                        trackPosAverage += t.position;
+                        trackTargetsPosAverage += t.position;
                         count += 1;
                     }
-                    trackPosAverage /= count;
+                    trackTargetsPosAverage /= count;
+                }
+
+                //Set targeting reticle to target location
+                if (trackTargets[0] != null)
+                {
+                    cameraObjectTrackingPosition = trackTargetsPosAverage;
                 }
 
                 //scale value on tracking lerp
                 if (tracking)
                 {
-                    trackLerpScale = Mathf.Lerp(trackLerpScale, 1, Time.unscaledDeltaTime * 1);//smoothly enable tracking.     
-
-                    //Set targeting reticle to target location
-                    if (trackTargets[0] != null)
-                    {
-                        cameraTargetingPosition = trackPosAverage;
-                    }
-
-                    disableTracking = 1;
-
+                    objectTrackingLerpValue = Mathf.Lerp(objectTrackingLerpValue, 1, Time.unscaledDeltaTime * 1);//smoothly enable tracking.                        
                 }
                 else
                 {
-                    // quickly removes any trackLerpScale when the player atempts to rotate the camera on their own.                
-                    disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Horizontal2") * 4));
-                    disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Vertical2") * 4));
-                    disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse X") * 4));
-                    disableTracking *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse Y") * 4));
+                    // quickly removes any objectTrackingLerpValue when the player atempts to rotate the camera on their own.                
+                    objectTrackingLerpValue *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Horizontal2") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Vertical2") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse X") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse Y") * 4));
 
-                    //smoothly disable tracking, but allow the player to turn it off fast with "disableTracking".
-                    trackLerpScale = Mathf.Lerp(trackLerpScale * disableTracking, 0, Time.unscaledDeltaTime * 2);
+                    //smoothly disable tracking.
+                    objectTrackingLerpValue = Mathf.Lerp(objectTrackingLerpValue, 0, Time.unscaledDeltaTime * 2);
                 }
 
                 //Character Object Tracking
                 {
-                    if (trackTargets[0] != null)
-                        characterTargetingPosition = trackPosAverage;
-                    else
-                        characterTargetingPosition = transform.position + transform.forward * 40;
+                    characterTargetingPosition = Vector3.Lerp(transform.position + transform.forward * 1000, cameraObjectTrackingPosition, objectTrackingLerpValue);
                 }
 
+                //Track camera to targeting position    
                 {
-                    //Track camera to targeting position    
-                    targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation((cameraTargetingPosition - transform.position).normalized, targetRotation * Vector3.up), trackLerpScale);
+                    targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation(cameraObjectTrackingPosition - transform.position, targetRotation * Vector3.up), objectTrackingLerpValue);
+                }
+            }
+
+            //Smooth Camera Direction Reset
+            {                           
+
+                //scale value on tracking lerp 
+                {
+                    // quickly removes any directionResetLerpValue when the player atempts to rotate the camera on their own.                
+                    directionResetLerpValue *= 1 - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Horizontal2") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Vertical2") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse X") * 4)) - Mathf.Clamp01(Mathf.Abs(Input.GetAxis("Mouse Y") * 4));
+
+                    //smoothly disable tracking.
+                    directionResetLerpValue = Mathf.Lerp(directionResetLerpValue, 0, Time.unscaledDeltaTime * 2);
+                }
+
+                //Character looks in the same direction as the camera
+                {
+                    characterTargetingPosition = Vector3.Lerp(characterTargetingPosition, cameraDirectionResetPosition, directionResetLerpValue);
+                }
+
+                //Track camera to targeting position    
+                {
+                    targetRotation = Quaternion.Lerp(targetRotation, Quaternion.LookRotation(cameraDirectionResetPosition - transform.position, targetRotation * Vector3.up), directionResetLerpValue);
                 }
             }
 
             //Increment shake time everyframe
             {
-                shakeTime += Time.unscaledDeltaTime * shakeTimeSpeed;
+                shakeTime += Time.deltaTime * shakeTimeSpeed;
             }
 
             //Apply Rotation
             transform.rotation = targetRotation * ReturnShake(1, shakeMagnatude) * ReturnShake(.01f, 1f);
         }
+    }
+
+    private void LateUpdate()
+    {
+        Debug.DrawLine(transform.position, orbitPoint);
     }
 
     Quaternion ReturnShake(float frequency, float magnatude)

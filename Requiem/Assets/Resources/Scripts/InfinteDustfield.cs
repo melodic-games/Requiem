@@ -83,7 +83,7 @@ public class InfinteDustfield : MonoBehaviour
             
             {
                 if (suckTarget != null && suck) { 
-                points[i].position = Vector3.MoveTowards(points[i].position, suckTarget.position, Time.deltaTime * 5);
+                points[i].position = Vector3.MoveTowards(points[i].position, suckTarget.position, Time.deltaTime * 15);
                 if ((points[i].position - suckTarget.position).sqrMagnitude < .1f)
                     Reset(i);
                 }

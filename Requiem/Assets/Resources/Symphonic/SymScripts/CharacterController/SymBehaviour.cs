@@ -4,7 +4,7 @@ using SymControl;
 
 [RequireComponent(typeof(SymCameraHelper))]
 [RequireComponent(typeof(SymAnimationHandler))]
-[RequireComponent(typeof(SymMaterialControl))]
+[RequireComponent(typeof(SymVisualControl))]
 [RequireComponent(typeof(SymIKHandler))]
 [RequireComponent(typeof(SymEffectControl))]
 
@@ -20,15 +20,13 @@ public class SymBehaviour : MonoBehaviour
     public Animator animator;
     public PhysicMaterial phyMat;
 
-    //Control Source 
-    public SymControlSource<SymBehaviour> controlSource = new SymUserControl();
-
     //Character   
     public float playerHeight = 1.8f;
     public float colliderRadius = .25f;
     public bool grounded = false;
     public Vector3 surfaceNormal;
     public bool crouching = false;
+    public float topSpeed = 10;
     public float energyLevel = 0f;
     public bool chargingEnergy = false;
     public bool flightEnabled = false;
@@ -37,15 +35,21 @@ public class SymBehaviour : MonoBehaviour
     public bool groundIsBelow;
     public RaycastHit groundHit;
     //CoyoteTime
-    //public bool useCoyoteTime = false;
     public float coyoteTime = 0;
     public float coyoteTimeMax = .2f;
     //Landing
     public float landingType = 0;
-    public float landingLag = 100;
-    public float landingLagMax = 2;
+    public float impactLag = 0;
     //Locomotion
     public bool locomotionInputInterupt = false;
+
+    //Boosting
+    public bool  boosting = false;
+    public float boostSpeed = 100;
+    public float boostTime = 0;
+    public float boostDuration = .1f;
+    public float boostInterupt = .05f;
+    public float boostWindup = .05f;
 
     //Physics   
     public float rbVelocityMagnatude;
@@ -53,14 +57,39 @@ public class SymBehaviour : MonoBehaviour
     public float surfaceVerticalSpeed;
     public float surfaceTraversalSpeed;
     public Vector3 localAngularVelocity;
+    public Vector3 localKinematicAngularVelocity;
 
     public bool intangible = false;
 
     public float enableGravity;
     public GravityManager gravityManager;
     public Vector3 gravity = Vector3.down;   
-    public Vector3 gravityRaw = Vector3.down;   
-      
+    public Vector3 gravityRaw = Vector3.down;
+
+    //Control Source 
+    public SymControlSource<SymBehaviour> controlSource = new SymUserControl();
+
+    //Ground Input data          
+    public float horizontalInput;
+    public float verticalInput;
+
+    public Vector3 moveDirection;
+    public float moveDirectionMag;
+    public bool canRun = false;
+
+    public float boostBuffer = Mathf.Infinity;
+    public float boostBufferMax = .5f;
+
+    public float jumpBuffer = Mathf.Infinity;
+    public float jumpBufferMax = .5f;
+
+    // Flight Input Data
+    public float thrustInput = 0;   
+    public float focusInput = 0;
+
+    public float liftCoefficient = 5;
+
+
     private void Start()
     {
         
@@ -98,12 +127,12 @@ public class SymBehaviour : MonoBehaviour
     private void CreateStateMachine()
     {
         stateMachine = new StateMachine<SymBehaviour>(this);
-        stateMachine.ChangeModule(SymBaseModule.Instance);
+        stateMachine.ChangeModule(SymGroundModule.Instance);
     }
 
     public void ExitCurrentModule()
     {
-        stateMachine.ChangeModule(SymBaseModule.Instance);
+        stateMachine.ChangeModule(SymGroundModule.Instance);
     }
 
     private void Update()
@@ -114,12 +143,47 @@ public class SymBehaviour : MonoBehaviour
             CreateStateMachine();
         }
 
-        controlSource.CollectInput();        
-
-        //increment landing lag
-        if (grounded)
+        //Aquire Input
         {
-            landingLag += Time.deltaTime;
+            controlSource.CollectInput();
+
+            //Directional Input
+            {
+                horizontalInput = controlSource.horizontalInput;
+                verticalInput = controlSource.verticalInput;
+            }
+     
+            //Crouching
+            { 
+                crouching = controlSource.crouching;
+            }
+
+            //Jump
+            if (controlSource.jump)
+            {
+                jumpBuffer = 0;
+            }
+
+            //Boost    
+            if (controlSource.boost && !boosting)
+            {
+                boostBuffer = 0;
+            }
+
+            //Run
+            if (controlSource.canRun)
+            {
+                canRun = true;
+            }
+
+            thrustInput = controlSource.thrustInput;
+            focusInput = controlSource.focusInput;
+        
+        }
+        
+        //count down impact lag        
+        {
+            impactLag -= Time.deltaTime;
         }
 
         //Send camera helper data
@@ -127,22 +191,22 @@ public class SymBehaviour : MonoBehaviour
             cameraHelper.manualUpVectorScaler = wallRun;
         }
 
-        if (energyLevel == 1 && !grounded && !flightEnabled)
+        if (energyLevel == 1 && !grounded && (stateMachine.currentModule.GetType() != typeof(SymFlightModule)))
             stateMachine.ChangeModule(SymFlightModule.Instance);
 
-        stateMachine.Update();
-
-        //Update physics values every frame.
-        {
-            rbVelocityMagnatude = rb.velocity.magnitude;
-            rbVelocityNormalized = rb.velocity.normalized;
-            localAngularVelocity = transform.InverseTransformDirection(rb.angularVelocity);            
-        }
 
     }
 
     private void FixedUpdate()
     {
+
+        //Update physics values every frame.
+        {
+            rbVelocityMagnatude = rb.velocity.magnitude;
+            rbVelocityNormalized = rb.velocity.normalized;
+            localAngularVelocity = transform.InverseTransformDirection(rb.angularVelocity);
+            localKinematicAngularVelocity = Vector3.zero;
+        }
 
         //Gravity, grounded check, coyote time, and ground data grab
         { 
@@ -224,8 +288,42 @@ public class SymBehaviour : MonoBehaviour
         { 
             locomotionInputInterupt = false;
 
-            if (landingLag < landingLagMax & grounded)
+            if (impactLag > 0)
                 locomotionInputInterupt = true;
+        }
+
+        //BoostTime update
+        {
+            //Increment boostTime
+            if (boosting)
+            {
+                boostTime += Time.deltaTime;
+
+                //Reset boosting and boostTime once we have boosted the full duration
+                if (boostTime >= boostDuration)
+                {
+                    boostTime = 0;
+                    boosting = false;
+                }
+            }
+
+        }
+
+        //BoostBuffer Update
+        {
+            boostBuffer += Time.deltaTime;
+        }
+
+        //Allow the player to cancel a boost early if needed
+        //if (owner.boosting && !owner.locomotionInputInterupt && owner.moveDirectionMag == 0)
+        //{
+        //    owner.boosting = false;
+        //    owner.boostTime = 0;
+        //}
+        
+        //jumpBuffer Update
+        {
+            jumpBuffer += Time.deltaTime;
         }
 
         //Run Locomotion Portion of Module
@@ -251,47 +349,46 @@ public class SymBehaviour : MonoBehaviour
         if (!grounded)
         {
             surfaceNormal = collision.GetContact(0).normal;
-            rb.angularVelocity = Vector3.zero;
 
-
-            ////Reset rotation on ground on impact
+            if (jumpBuffer > jumpBufferMax)
             {
-                Vector3 piviot = transform.position + transform.up * playerHeight * .5f;
-                transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity), -gravity);
-                transform.position = piviot - transform.up * playerHeight * .5f;
+                rb.angularVelocity = Vector3.zero;
+
+                Vector3 localOffset = Vector3.up * playerHeight * .5f;
+                Quaternion rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity), -gravity);
+
+                //Reset rotation on ground on impact                
+                SymUtils.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity), -gravity));
+
+                //Check if we should ground the character normally, or if the character should stick to walls
+                if (Vector3.Dot(surfaceNormal, -gravity.normalized) < .5f)// && energyLevel == 1
+                {
+                    wallRun = 1;
+                    //Reset rotation on ground on impact to stick to walls                      
+                    SymUtils.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(transform.right, surfaceNormal), surfaceNormal));
+                }
+
+                //Reset Landing Type
+                landingType = 0;
+
+                //handle landing lag
+                if (Vector3.Dot(rbVelocityNormalized, surfaceNormal) < -0.85f && rbVelocityMagnatude > 40)
+                {
+                    impactLag = 1;            
+                    landingType = 1;
+                    rb.velocity = Vector3.zero;
+                    Debug.Log("Hard Contact");
+                }
+                else
+                {
+                    Debug.Log("Normal Contact");
+                }
+
+                //recalulate ground speeds relative to the collission surface now that it has updated
+                surfaceVerticalSpeed = Vector3.Dot(rbVelocityNormalized * rbVelocityMagnatude, surfaceNormal);
+                surfaceTraversalSpeed = rbVelocityMagnatude - Mathf.Abs(surfaceVerticalSpeed);
             }
-
-            //Check if we should ground the character normally, or if the character should stick to walls
-            if (Vector3.Dot(surfaceNormal, -gravity.normalized) < .5f)// && energyLevel == 1
-            {
-                wallRun = 1;
-
-                //Reset rotation on ground on impact to stick to walls                
-                Vector3 piviot = transform.position + transform.up * playerHeight * .5f;
-                transform.rotation = Quaternion.LookRotation(Vector3.Cross(transform.right, surfaceNormal), surfaceNormal);
-                transform.position = piviot - transform.up * playerHeight * .5f;
-            }
-
-            //Reset Landing Type
-            landingType = 0;
-
-            //handle landing lag
-            if (Vector3.Dot(rbVelocityNormalized, surfaceNormal) < -0.85f && rbVelocityMagnatude > 40)
-            {
-                //landingLag = 0;
-                landingLagMax = 1;
-                landingType = 1;
-                rb.velocity = Vector3.zero;
-                Debug.Log("Hard Contact");
-            }
-            else
-            {
-                Debug.Log("Normal Contact");
-            }
-
-            //recalulate ground speeds relative to the collission surface now that it has updated
-            surfaceVerticalSpeed = Vector3.Dot(rb.velocity, surfaceNormal);
-            surfaceTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(surfaceVerticalSpeed);
+            
         }
 
         //Run Module Specific Collission 
@@ -305,14 +402,12 @@ public class SymBehaviour : MonoBehaviour
             surfaceNormal = collision.GetContact(0).normal;
 
             //recalulate ground speeds relative to the collission surface now that it has updated
-            surfaceVerticalSpeed = Vector3.Dot(rb.velocity, surfaceNormal);
-            surfaceTraversalSpeed = rb.velocity.magnitude - Mathf.Abs(surfaceVerticalSpeed);
+            surfaceVerticalSpeed = Vector3.Dot(rbVelocityNormalized * rbVelocityMagnatude, surfaceNormal);
+            surfaceTraversalSpeed = rbVelocityMagnatude - Mathf.Abs(surfaceVerticalSpeed);
         }
 
         //Run Module Specific Collission 
         stateMachine.CollissionStay(collision);
     }
-
-
 
 }
