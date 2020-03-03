@@ -1,0 +1,173 @@
+fileFormatVersion: 2
+guid: 01df6cd0fafb303469c9a93207f6c666
+ModelImporter:
+  serializedVersion: 16
+  fileIDToRecycleName:
+    100000: Alloy_rims
+    100002: Alloy_rims 1
+    100004: Black_Plastic
+    100006: Body
+    100008: Body 1
+    100010: //RootNode
+    100012: Car_C_Glass
+    100014: DarkChrome
+    100016: Engine_Bay
+    100018: Floor_pan
+    100020: Fog_lights
+    100022: Front_grill
+    100024: Front_Lights
+    100026: Front_Lights2
+    100028: Mirrors
+    100030: Number_Plate
+    100032: Rear_Lights
+    100034: Tyres
+    100036: Tyres 1
+    100038: Unity_Logo_A
+    100040: Unity_Logo_B
+    100042: Unity_Logo_C
+    100044: Wheels_Back
+    100046: Wheels_Front
+    100048: Wipers
+    400000: Alloy_rims
+    400002: Alloy_rims 1
+    400004: Black_Plastic
+    400006: Body
+    400008: Body 1
+    400010: //RootNode
+    400012: Car_C_Glass
+    400014: DarkChrome
+    400016: Engine_Bay
+    400018: Floor_pan
+    400020: Fog_lights
+    400022: Front_grill
+    400024: Front_Lights
+    400026: Front_Lights2
+    400028: Mirrors
+    400030: Number_Plate
+    400032: Rear_Lights
+    400034: Tyres
+    400036: Tyres 1
+    400038: Unity_Logo_A
+    400040: Unity_Logo_B
+    400042: Unity_Logo_C
+    400044: Wheels_Back
+    400046: Wheels_Front
+    400048: Wipers
+    2300000: Alloy_rims
+    2300002: Alloy_rims 1
+    2300004: Black_Plastic
+    2300006: Body 1
+    2300008: Car_C_Glass
+    2300010: DarkChrome
+    2300012: Engine_Bay
+    2300014: Floor_pan
+    2300016: Fog_lights
+    2300018: Front_grill
+    2300020: Front_Lights
+    2300022: Front_Lights2
+    2300024: Mirrors
+    2300026: Number_Plate
+    2300028: Rear_Lights
+    2300030: Tyres
+    2300032: Tyres 1
+    2300034: Unity_Logo_A
+    2300036: Unity_Logo_B
+    2300038: Unity_Logo_C
+    2300040: Wipers
+    3300000: Alloy_rims
+    3300002: Alloy_rims 1
+    3300004: Black_Plastic
+    3300006: Body 1
+    3300008: Car_C_Glass
+    3300010: DarkChrome
+    3300012: Engine_Bay
+    3300014: Floor_pan
+    3300016: Fog_lights
+    3300018: Front_grill
+    3300020: Front_Lights
+    3300022: Front_Lights2
+    3300024: Mirrors
+    3300026: Number_Plate
+    3300028: Rear_Lights
+    3300030: Tyres
+    3300032: Tyres 1
+    3300034: Unity_Logo_A
+    3300036: Unity_Logo_B
+    3300038: Unity_Logo_C
+    3300040: Wipers
+    4300000: Unity_Logo_C
+    4300002: Unity_Logo_B
+    4300004: Unity_Logo_A
+    4300006: Front_Lights2
+    4300008: Fog_lights
+    4300010: Car_C_Glass
+    4300012: DarkChrome
+    4300014: Black_Plastic
+    4300016: Wipers
+    4300018: Rear_Lights
+    4300020: Front_Lights
+    4300022: Body
+    4300024: Mirrors
+    4300026: Number_Plate
+    4300028: Engine_Bay
+    4300030: Front_grill
+    4300032: Floor_pan
+    4300034: Alloy_rims
+    4300036: Tyres
+    4300038: Alloy_rims
+    4300040: Tyres
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 

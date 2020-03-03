@@ -1,0 +1,153 @@
+fileFormatVersion: 2
+guid: ade9c13dd0c6b4c4392fb68a8b7eb989
+ModelImporter:
+  serializedVersion: 16
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Dust_Track
+    100004: Dust_Track1
+    100006: Dust_Track2
+    100008: Dust_Track3
+    100010: Dust_Track 1
+    100012: Dust_Track5
+    100014: Dust_Track6
+    100016: Dust_Track7
+    100018: Dust_Track8
+    100020: Dust_Track11
+    100022: Dust_Track21
+    100024: Dust_Track31
+    100026: Dust_Track51
+    100028: Dust_Track61
+    100030: Dust_Track71
+    100032: Dust_Track81
+    100034: Dust_Track91
+    100036: Dust_Track_Dust_Track
+    400000: //RootNode
+    400002: Dust_Track
+    400004: Dust_Track1
+    400006: Dust_Track2
+    400008: Dust_Track3
+    400010: Dust_Track 1
+    400012: Dust_Track5
+    400014: Dust_Track6
+    400016: Dust_Track7
+    400018: Dust_Track8
+    400020: Dust_Track11
+    400022: Dust_Track21
+    400024: Dust_Track31
+    400026: Dust_Track51
+    400028: Dust_Track61
+    400030: Dust_Track71
+    400032: Dust_Track81
+    400034: Dust_Track91
+    400036: Dust_Track_Dust_Track
+    2300000: //RootNode
+    2300002: Dust_Track
+    2300004: Dust_Track1
+    2300006: Dust_Track2
+    2300008: Dust_Track3
+    2300010: Dust_Track 1
+    2300012: Dust_Track5
+    2300014: Dust_Track6
+    2300016: Dust_Track7
+    2300018: Dust_Track8
+    2300020: Dust_Track11
+    2300022: Dust_Track21
+    2300024: Dust_Track31
+    2300026: Dust_Track51
+    2300028: Dust_Track61
+    2300030: Dust_Track71
+    2300032: Dust_Track81
+    2300034: Dust_Track91
+    2300036: Dust_Track_Dust_Track
+    3300000: //RootNode
+    3300002: Dust_Track
+    3300004: Dust_Track1
+    3300006: Dust_Track2
+    3300008: Dust_Track3
+    3300010: Dust_Track 1
+    3300012: Dust_Track5
+    3300014: Dust_Track6
+    3300016: Dust_Track7
+    3300018: Dust_Track8
+    3300020: Dust_Track11
+    3300022: Dust_Track21
+    3300024: Dust_Track31
+    3300026: Dust_Track51
+    3300028: Dust_Track61
+    3300030: Dust_Track71
+    3300032: Dust_Track81
+    3300034: Dust_Track91
+    3300036: Dust_Track_Dust_Track
+    4300000: Dust_Track
+    4300002: Dust_Track1
+    4300004: Dust_Track2
+    4300006: Dust_Track3
+    4300008: Dust_Track5
+    4300010: Dust_Track6
+    4300012: Dust_Track7
+    4300014: Dust_Track8
+    4300016: Dust_Track91
+    4300018: Dust_Track_Dust_Track
+    4300020: Dust_Track11
+    4300022: Dust_Track21
+    4300024: Dust_Track31
+    4300026: Dust_Track51
+    4300028: Dust_Track61
+    4300030: Dust_Track71
+    4300032: Dust_Track81
+    9500000: //RootNode
+  materials:
+    importMaterials: 1
+    materialName: 1
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  additionalBone: 0
+  userData: 
