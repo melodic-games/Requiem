@@ -1,2 +1,0 @@
-C:\Users\amber\OneDrive\Documents\GitHub\Requiem\Requiem\obj\Debug\Assembly-CSharp.csprojAssemblyReference.cache
-C:\Users\amber\OneDrive\Documents\GitHub\Requiem\Requiem\obj\Debug\Assembly-CSharp.csproj.CoreCompileInputs.cache
