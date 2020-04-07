@@ -1,12 +1,12 @@
 ﻿using UnityEngine;
 using SymBehaviourModule;
 
+
 public class SymFlight : Behaviour<BaseCharacterController>
 {
     private static SymFlight instance;
-
-    private float pitchInputAcceleration;
-    private float rollInputAcceleration;
+    private int boostRollDirection = 0;
+    private float dischargeTimer = 0;
 
     private SymFlight()
     {
@@ -34,11 +34,11 @@ public class SymFlight : Behaviour<BaseCharacterController>
     public override void EnterModule(BaseCharacterController owner)
     {
         Debug.Log("EnteringFlightBehaviour");
-        owner.flightEnabled = true;       
-        owner.jumpBuffer = owner.jumpBufferMax;
+        dischargeTimer = 0;
+        owner.flightEnabled = true;           
         owner.rb.angularDrag = 5;
-        pitchInputAcceleration = 0;
-        rollInputAcceleration = 0;
+        owner.weightedPitchInput = 0;
+        owner.weightedRollInput = 0;
         owner.turnScale = 0;
         owner.turnCoefficient = 5;
     }
@@ -56,7 +56,7 @@ public class SymFlight : Behaviour<BaseCharacterController>
         {
             //Calulate input mute specific to this module
             {
-                if (owner.boostTime < owner.boostDuration && owner.boosting)
+                if (owner.boosting)
                     owner.muteInput = true;
             }
 
@@ -65,33 +65,31 @@ public class SymFlight : Behaviour<BaseCharacterController>
                 owner.topSpeed = owner.flightTopSpeed;
             }
 
+            //drillDash Charge
+            {
+                if (Mathf.Abs(owner.horizontalInput) == 1 && owner.thrustInput == 0)
+                    owner.spinUp = Mathf.Clamp01(owner.spinUp + 1 * Time.deltaTime);
+                else
+                    owner.spinUp = Mathf.Clamp01(owner.spinUp - 1 * Time.deltaTime);
+            }
+            
             //Power Level charge and decharge
             {
 
-                if (Mathf.Abs(owner.localAngularVelocity.y) > 10 && owner.thrustInput == 0)
+                if (Mathf.Abs(owner.horizontalInput) == 1 && owner.thrustInput == 0)
                 {
-                    owner.energyLevel = Mathf.Min(owner.energyLevel + Time.deltaTime, 1);
+                    dischargeTimer = 0;
+                    owner.energyLevel = Mathf.Min(owner.energyLevel + Time.deltaTime * 2, 1);
                     owner.chargingEnergy = true;
                 }
                 else
-                {                    
+                {
+                    dischargeTimer += Time.deltaTime;
+                    if (dischargeTimer > 1)
+                    owner.energyLevel = Mathf.Max(owner.energyLevel - Time.deltaTime * 2, 0);
                     owner.chargingEnergy = false;
                 }
 
-            }
-
-            //drillDash Charge
-            {
-                if (Mathf.Abs(owner.horizontalInput) == 1)
-                {
-                    owner.drillDash += Mathf.Lerp(1, 3, Mathf.InverseLerp(80, owner.topSpeed, owner.rbVelocityMagnitude)) * Time.deltaTime;
-                }
-                else
-                {
-                    owner.drillDash -= 3 * Time.deltaTime;
-                }
-
-                owner.drillDash = Mathf.Clamp01(owner.drillDash);
             }
 
             //turnScale Calulation
@@ -108,82 +106,87 @@ public class SymFlight : Behaviour<BaseCharacterController>
         //Locomotion
         if (!owner.muteInput)
         {
+            BaseCharacterFunctions.ForwardAirbornDirectionControl(owner, owner.orientationTensor, owner.targetOrientationTensor);
+            BaseCharacterFunctions.LateralAirbornDirectionControl(owner, owner.orientationTensor, owner.targetOrientationTensor);
 
-            //Angular Acceleration
-            {
-                //Pitch - x
-                float pitchAcceleration = Mathf.Lerp(1, 1.5f, Mathf.Abs(owner.horizontalInput)) * owner.angularAccelerationBase * (owner.angularGain.x - (5 * owner.thrustInput));
-                //pitchAcceleration = Mathf.Lerp(pitchAcceleration, Mathf.Lerp(1, 1.5f, Mathf.Abs(owner.horizontalInput)) * owner.angularAccelerationBase * (owner.angularGain.x - (5 * owner.thrustInput)), Time.deltaTime * 2);
-                pitchInputAcceleration = Mathf.Lerp(pitchInputAcceleration, owner.verticalInput, Time.deltaTime * 5);
-                owner.rb.AddTorque(owner.transform.right * pitchInputAcceleration * pitchAcceleration, ForceMode.Acceleration);
-                //owner.rb.AddTorque(owner.transform.right * owner.verticalInput * pitchAcceleration, ForceMode.Acceleration);
-                //Roll - y
-                // rollAcceleration = Mathf.Lerp(rollAcceleration, Mathf.Lerp(1, .55f, Mathf.Abs(owner.verticalInput)) * owner.angularAccelerationBase * (owner.angularGain.y * (1 + owner.drillDash * 2)), Time.deltaTime * 2);
-                float rollAcceleration = Mathf.Lerp(1, .55f, Mathf.Abs(owner.verticalInput)) * owner.angularAccelerationBase * (owner.angularGain.y * (1 + owner.drillDash * 2));
-                rollInputAcceleration = Mathf.Lerp(rollInputAcceleration, owner.horizontalInput, Time.deltaTime * 5);
-                owner.rb.AddTorque(-owner.orientationTensor.forward * rollInputAcceleration * rollAcceleration, ForceMode.Acceleration);
-            }
-            bool hit = Physics.Raycast(owner.transform.position, owner.orientationTensor.forward, out RaycastHit groundHit, Mathf.Infinity, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore);
+            BaseCharacterFunctions.ManualAirbornAngularAcceleration(owner,
+                owner.weightedPitchInput + owner.virtualVerticalInput * (1 - Mathf.Abs(owner.weightedPitchInput)),
+                owner.weightedRollInput + owner.virtualHorizontalInput * (1 - Mathf.Abs(owner.weightedRollInput))
+                );
 
-            Debug.DrawLine(owner.transform.position, groundHit.point); 
-
-            //Player Activated Boost        
-            if (owner.boostBuffer <= owner.boostBufferMax && owner.drillDash == 1)
+            //Player Activated Boost                
+            if (owner.boostBuffer <= owner.boostBufferMax && owner.energyLevel == 1)
             {
                 owner.boostBuffer = Mathf.Infinity;
-                owner.boostTime = 0;
-                owner.boosting = true;
 
-                SymUtility.ShockWave(owner.transform.position + owner.transform.up * owner.playerHeight * .5f, owner.transform.rotation, owner.rbVelocityMagnitude * Vector3.Dot(owner.rbVelocityNormalized, -owner.surfaceNormal), owner.rb, owner.shockwavePrefab);
 
-                owner.rb.velocity = owner.orientationTensor.forward * owner.flightTopSpeed;// Vector3.ClampMagnitude(owner.rb.velocity + , topSpeed);            
-
-                if (hit)
-                    owner.transform.position = groundHit.point -owner.orientationTensor.forward * groundHit.distance * .1f;
-
+                BaseCharacterFunctions.ShockWave(owner.transform.position + owner.transform.up * owner.playerHeight * .5f, owner.transform.rotation, owner.rbVelocityMagnitude * Vector3.Dot(owner.rbVelocityNormalized, -owner.surfaceNormal), owner.rb, owner.shockwavePrefab);
+                owner.rb.velocity = owner.orientationTensor.forward * (owner.rbVelocityMagnitude + 150);// Vector3.ClampMagnitude(owner.rb.velocity + , topSpeed);            
+                owner.localAngularVelocity.x = 0;
+                owner.localAngularVelocity.z = 0;
+                owner.rb.angularVelocity = owner.transform.TransformDirection(owner.localAngularVelocity);
                 owner.rbVelocityNormalized = owner.rb.velocity.normalized;
-
-                float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);
-
-                //owner.cameraHelper.CameraResetLerp(Mathf.Lerp(-.1f, 1, (dot + 1) / 2));       
-
-               // owner.cameraHelper.CauseCameraShake(5);
-                
-                //Expend Energy
                 owner.energyLevel = 0;
+
+                if (owner.horizontalInput != 0)
+                {
+                    boostRollDirection = (int)Mathf.Sign(owner.horizontalInput);
+                    owner.boostTime = 1f;
+                    owner.boosting = true;
+                }
+                else
+                {
+                    boostRollDirection = 0;
+                }
+
             }
+        }
+
+        //Maintain Boost
+        if (owner.boosting)
+        {
+             Vector2 angularGain = new Vector2(6, 4);
+             owner.rb.AddTorque(-owner.orientationTensor.forward * boostRollDirection * owner.angularAccelerationBase * angularGain.y * 3, ForceMode.Acceleration);
+        }
+
+        if (!owner.muteInput)
+        { 
 
             //Forward Acceleration      
             {
-                //Diving downwards increases acceleration.
-                float diveBoost = owner.flightAccelerationBase * Mathf.Clamp01(Vector3.Dot(owner.orientationTensor.forward, owner.gravity.normalized));
-                //Spinning increases acceleration.
-                float spinBoost = owner.flightAccelerationBase * Mathf.InverseLerp(5,10, Mathf.Abs(owner.localAngularVelocity.y));
-
-                float acceleration = Mathf.Lerp(owner.flightAccelerationBase, 25, Mathf.InverseLerp(10, 20, owner.rbVelocityMagnitude));
-
-                owner.rb.AddForce(owner.orientationTensor.forward * owner.thrustInput * (acceleration + diveBoost + spinBoost), ForceMode.Acceleration);
+                owner.rb.velocity += owner.orientationTensor.forward * owner.thrustInput * Time.deltaTime
+                    * Mathf.Lerp(owner.flightAccelerationBase, 25, Mathf.InverseLerp(10, 20, owner.rbVelocityMagnitude))//Acceleration
+                    * (1 + Mathf.InverseLerp(5, 10, Mathf.Abs(owner.localAngularVelocity.y))) //SpinBoost
+                    ;          
             }
+
+            //Clamp top speed                    
+            {
+                owner.rb.velocity = Vector3.ClampMagnitude(owner.rb.velocity, owner.topSpeed);
+                owner.rbVelocityMagnitude = Mathf.Min(owner.rbVelocityMagnitude, owner.topSpeed);
+            }
+
+            BaseCharacterFunctions.AirbornDrag(owner);
 
         }
 
         //Turn force
         {           
-            Vector3 force = SymUtility.RedirectForce(owner.orientationTensor.forward, owner.rbVelocityNormalized, owner.rbVelocityMagnitude, owner.turnScale * owner.turnCoefficient);
-            owner.rb.AddForce(force, ForceMode.Acceleration);
+            //owner.rb.velocity += BaseCharacterFunctions.RedirectForce(owner.orientationTensor.forward, owner.rbVelocityNormalized, owner.rbVelocityMagnitude, owner.turnScale * owner.turnCoefficient) * Time.deltaTime;
+
+            owner.rb.velocity = Vector3.Lerp(owner.rb.velocity, (owner.orientationTensor.forward * owner.rbVelocityMagnitude), .025f * owner.turnScale);
         }
 
     }
 
     public override void OnCollisionEnter(BaseCharacterController owner, Collision collision)
-    {
-        if (owner.jumpBuffer > owner.jumpBufferMax)
+    {       
         //if (Vector3.Dot(owner.surfaceNormal, -owner.gravity.normalized) > .5f)
         {
             Debug.Log("Grounded from OnCollisionEnter, in flight behaviour");
             owner.rb.angularVelocity = Vector3.zero;
             owner.grounded = true;
-            owner.drillDash = 0;
+            owner.spinUp = 0;
             owner.flightEnabled = false;
             owner.ResetCurrentModule();            
         }
@@ -196,6 +199,7 @@ public class SymFlight : Behaviour<BaseCharacterController>
 
     public override void ExitModule(BaseCharacterController owner)
     {
-        
+        owner.boosting = false;
+        owner.boostTime = 0;
     }
 }

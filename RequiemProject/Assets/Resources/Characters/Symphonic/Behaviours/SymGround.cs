@@ -56,8 +56,7 @@ public class SymGround : Behaviour<BaseCharacterController>
     {
         Debug.Log("EnteringGroundBehaviour");
         //Reset Movement Values for when on ground          
-        {                       
-            owner.jumpBuffer = owner.jumpBufferMax;
+        {                               
             owner.topSpeed = Mathf.Max(owner.surfaceTraversalSpeed, owner.groundWalkSpeed);
 
             if (owner.surfaceTraversalSpeed > 20)
@@ -66,7 +65,17 @@ public class SymGround : Behaviour<BaseCharacterController>
                 acceleratorTime = acceleratorWindup;
             }
 
-            owner.moveDirection = Quaternion.LookRotation(owner.rbVelocityNormalized, -owner.gravity) * Vector3.forward * Mathf.Min(1,owner.rbVelocityMagnitude);
+            owner.moveDirection = Quaternion.LookRotation(owner.rbVelocityNormalized, -owner.gravity) * Vector3.forward * Mathf.Min(1,owner.rbVelocityMagnitude);       
+        
+            if (owner.rbVelocityMagnitude > 10)
+            {
+                targetForward = owner.rbVelocityNormalized;
+            }
+            else
+            {
+                Debug.Log("targetforward set as transform forward");
+                targetForward = owner.transform.forward;
+            }
         }
 
         //Adjust Capsule Collider
@@ -95,7 +104,7 @@ public class SymGround : Behaviour<BaseCharacterController>
 
             //Calulate input muting specific to this module
             {
-                if (owner.boostTime < owner.boostInterupt && owner.boosting)
+                if (owner.boosting)
                     owner.muteInput = true;
             }
 
@@ -134,7 +143,8 @@ public class SymGround : Behaviour<BaseCharacterController>
                 }
 
                 //Change rate of acceleration direction. full at any speed below walking, lerps to 2 at full speed
-                moveDirectionChangeRate = 2;// Mathf.LerpUnclamped(1 / Time.deltaTime, 2, Mathf.InverseLerp(owner.groundWalkSpeed, owner.groundTopSpeed, owner.rbVelocityMagnitude));//2
+                moveDirectionChangeRate = Mathf.Lerp(10,2,Mathf.InverseLerp(owner.groundWalkSpeed,owner.groundTopSpeed,owner.rbVelocityMagnitude));
+                // Mathf.LerpUnclamped(1 / Time.deltaTime, 2, Mathf.InverseLerp(owner.groundWalkSpeed, owner.groundTopSpeed, owner.rbVelocityMagnitude));//2
 
                 //Align moveDirection towards moveDirectionRaw based on moveDirectionChangeRate to smooth out digital input at high speed    
                 
@@ -167,43 +177,38 @@ public class SymGround : Behaviour<BaseCharacterController>
                     owner.rb.angularVelocity = Vector3.zero;                                     
 
                     //Find Upwards vector                    
-                    Vector3 upwards = Vector3.Lerp(-owner.gravity.normalized, owner.surfaceNormal, owner.rbVelocityMagnitude * .1f);                                       
+                    Vector3 upwards = Vector3.Lerp(-owner.gravity.normalized, owner.surfaceNormal, owner.rbVelocityMagnitude * .1f);
 
                     //Find Forward vector                                          
                     if (owner.moveDirectionMag > .1f && !owner.muteInput)
-                        targetForward = owner.moveDirection;                        
+                        targetForward = owner.moveDirection;
                     else if (owner.rbVelocityMagnitude > 1 && owner.focusInput && !owner.muteInput)
-                        targetForward = Camera.main.transform.forward;                                                             
-
+                        targetForward = Camera.main.transform.forward;
+                    
                     //Crush the forward vector to make it orthogonal to upwards vector                    
                     targetForward = (targetForward - (upwards * Vector3.Dot(targetForward, upwards))).normalized;     
                     
+                    if (targetForward == Vector3.zero)
+                        targetForward = owner.transform.forward;
+
                     //Find rotation speed                    
                     float rotationSpeedScale = Mathf.Lerp(5, 5, Mathf.InverseLerp(owner.groundWalkSpeed, owner.groundRunSpeed, owner.rbVelocityMagnitude));
-             
-                    owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(targetForward, upwards), Time.deltaTime * rotationSpeedScale);
+                     owner.transform.rotation = Quaternion.Slerp(owner.transform.rotation, Quaternion.LookRotation(targetForward, upwards), Time.deltaTime * rotationSpeedScale);
+                    if (targetForward == Vector3.zero) { Debug.Log("Here1"); }
+               
+
                 }     
 
                 //turnScale Calulation   
-                {
-
-                    //find Increment value
-                    {
-                        //Calulate characterFacingTargetForward                
-                        float characterFacingTargetForward = Vector3.Dot(targetForward, owner.transform.forward);
-
-                        //Check if turinging around
-                        if (characterFacingTargetForward < -.2f)             
-                        {
-                            owner.turningAround = true;
-                            Debug.Log("turningAround");
-                        }
-
-                        //Check if we are facing the target forward enough to no longer be considered turning around
-                        if (Mathf.Clamp01((characterFacingTargetForward * 10) - 9) > .9f)
-                            owner.turningAround = false;
-                    }
-
+                {                         
+                    //Check if turinging around
+                    if (Vector3.Dot(targetForward, owner.transform.forward) < -.2f)                                     
+                        owner.turningAround = true;                   
+                        
+                    //Check if we are facing the target forward enough to no longer be considered turning around
+                    if (Mathf.Clamp01((Vector3.Dot(targetForward, owner.transform.forward) * 10) - 9) > .9f)
+                        owner.turningAround = false;
+                                      
                     if (!owner.turningAround)
                         increment = .5f * Time.deltaTime;
                     else
@@ -211,9 +216,7 @@ public class SymGround : Behaviour<BaseCharacterController>
                             
                       disable = Mathf.Clamp01(Vector3.Dot(owner.rbVelocityNormalized, owner.transform.forward) * 10);
 
-                    owner.turnScale = Mathf.Clamp01(owner.turnScale + increment) * owner.moveDirectionMag * disable;
-
-                   // owner.turnScale = Mathf.Clamp01(owner.turnScale + .5f * Time.deltaTime) * owner.moveDirectionMag * disable;
+                      owner.turnScale = Mathf.Clamp01(owner.turnScale + increment) * owner.moveDirectionMag * disable;                 
                 }
 
                 //WrapAroundSurfaces     
@@ -281,12 +284,12 @@ public class SymGround : Behaviour<BaseCharacterController>
             {
                 //Filter through the ContactPoints to see if we're grounded and to see if we can step up
                 ContactPoint groundCP = default;
-                bool foundGround = SymUtility.FindGround(out groundCP, allContactPoints);
+                bool foundGround = BaseCharacterFunctions.FindGround(out groundCP, allContactPoints);
 
                 Vector3 stepUpOffset = default;
                 bool stepUp = false;
                 if (foundGround)
-                    stepUp = SymUtility.FindStep(out stepUpOffset, maxStepHeight, stepSearchOvershoot, allContactPoints, groundCP, owner.rb.velocity);
+                    stepUp = BaseCharacterFunctions.FindStep(out stepUpOffset, maxStepHeight, stepSearchOvershoot, allContactPoints, groundCP, owner.rb.velocity);
 
                 //Steps
                 if (stepUp)
@@ -303,35 +306,39 @@ public class SymGround : Behaviour<BaseCharacterController>
             if (!owner.muteInput)
             {
                 if (owner.boostBuffer <= owner.boostBufferMax)
-                {
-
-                    
-
+                {                   
                     owner.boostBuffer = Mathf.Infinity;                                      
                     //GameManager.manager.PauseGameForDuration(owner.boostWindup);    
                     
                     if (owner.moveDirectionMag > .1f || owner.canRun)
                     {
-                        owner.rb.velocity = owner.transform.forward * owner.boostSpeed;
-                        //owner.transform.rotation = Quaternion.LookRotation(owner.moveDirectionRaw, -owner.gravity);
-                    }
-                    //else                    
-                       // owner.rb.velocity = targetForward * owner.boostSpeed;                                      
+                        if (Vector3.Dot(targetForward, owner.transform.forward) > .8)
+                        {
+                            owner.rb.velocity = targetForward * owner.boostSpeed;
+                            owner.transform.rotation = Quaternion.LookRotation(targetForward, -owner.gravity);
+                        }
+                        else
+                        {
+                            owner.rb.velocity = owner.transform.forward * owner.boostSpeed;
+                        }
 
-                    owner.rbVelocityNormalized = owner.rb.velocity.normalized;
-                    float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);        
-                    //owner.cameraHelper.CameraResetLerp(Mathf.Lerp(0, 1, (dot + 1) / 2));                                          
-                    //owner.cameraHelper.CauseCameraShake(1);
-                    owner.moveDirection = owner.moveDirectionRaw;          
-                    owner.boosting = true;
-                    owner.boostTime = 0;
-                    owner.canRun = true;
-                    acceleratorTime = acceleratorWindup;
-                    owner.topSpeed = Mathf.Max(owner.boostSpeed, owner.topSpeed);
-                    owner.muteInput = true;
-                    SymUtility.ShockWave(owner.transform.position + owner.transform.up * owner.playerHeight * .5f, owner.transform.rotation, owner.rbVelocityMagnitude * Vector3.Dot(owner.rbVelocityNormalized, -owner.surfaceNormal), owner.rb, owner.shockwavePrefab);
-                    //Debug.Log("Dash!");        
-                    owner.ResetBodyDynamicBones();
+                        owner.turnScale = 1;
+                        
+                        owner.rbVelocityNormalized = owner.rb.velocity.normalized;
+                        float dot = Vector3.Dot(-owner.rbVelocityNormalized, Camera.main.transform.forward);        
+                        //owner.cameraHelper.CameraResetLerp(Mathf.Lerp(0, 1, (dot + 1) / 2));                                          
+                        //owner.cameraHelper.CauseCameraShake(1);
+                        owner.moveDirection = owner.moveDirectionRaw;          
+                        owner.boosting = true;
+                        owner.boostTime = .1f;
+                        owner.canRun = true;
+                        acceleratorTime = acceleratorWindup;
+                        owner.topSpeed = Mathf.Max(owner.boostSpeed, owner.topSpeed);
+                        owner.muteInput = true;
+                        BaseCharacterFunctions.ShockWave(owner.transform.position + owner.transform.up * owner.playerHeight * .5f, owner.transform.rotation, owner.rbVelocityMagnitude * Vector3.Dot(owner.rbVelocityNormalized, -owner.surfaceNormal), owner.rb, owner.shockwavePrefab);
+                        //Debug.Log("Dash!");        
+                        owner.ResetBodyDynamicBones();
+                    }
                 }                
             }
 
@@ -348,7 +355,6 @@ public class SymGround : Behaviour<BaseCharacterController>
                 //Jumping.
                 if (owner.jumpBuffer < owner.jumpBufferMax)
                 {
-                    owner.jumpBuffer = Mathf.Infinity;
                     owner.grounded = false;
 
                     //Allow the physics engine to rotate the character                    
@@ -357,6 +363,8 @@ public class SymGround : Behaviour<BaseCharacterController>
                     if (!owner.crouching || owner.moveDirectionMag == 1)
                     {
                         owner.rb.velocity += owner.surfaceNormal * owner.jumpPower;
+                        owner.rbVelocityNormalized = owner.rb.velocity.normalized;
+                        owner.rbVelocityMagnitude = owner.rb.velocity.magnitude;
                         Debug.Log("Jump");
                     }
                     else
@@ -371,6 +379,7 @@ public class SymGround : Behaviour<BaseCharacterController>
                     owner.wallRun = 0;
                     owner.coyoteTime = owner.coyoteTimeMax;
                 }
+                    owner.jumpBuffer = owner.jumpBufferMax;
 
                 ////Forward Acceleration on ground                       
                 //float acceleration = Mathf.Lerp(5, 50, Mathf.InverseLerp(0, owner.groundRunSpeed, speedMemory));
@@ -388,12 +397,18 @@ public class SymGround : Behaviour<BaseCharacterController>
                     //Disable acceleration if not facing move direction
                     acceleration *= Mathf.Clamp01(Vector3.Dot(owner.moveDirection.normalized, owner.transform.forward));
 
+                    if (owner.crouching)
+                    {
+                        acceleration *= 0;
+                    }
+
                     owner.rb.velocity += owner.moveDirection * acceleration * Time.deltaTime;
                 }
 
 
                 //Turn force                                                                             
-                owner.rb.velocity += SymUtility.RedirectForce(owner.transform.forward, owner.rbVelocityNormalized, owner.rbVelocityMagnitude, owner.turnScale * owner.turnCoefficient) * Time.deltaTime;                                                                                                           
+                //owner.rb.velocity += BaseCharacterFunctions.RedirectForce(owner.transform.forward, owner.rbVelocityNormalized, owner.rbVelocityMagnitude, owner.turnScale * owner.turnCoefficient) * Time.deltaTime;                                                                                                           
+                owner.rb.velocity = Vector3.Lerp(owner.rb.velocity, (owner.orientationTensor.forward * owner.rbVelocityMagnitude), .1f * owner.turnScale * owner.turnScale * owner.turnScale);
 
             }            
             
@@ -458,19 +473,18 @@ public class SymGround : Behaviour<BaseCharacterController>
                     }
                 }
 
-                //Control Drag, enable friction               
+                //Control Drag            
                 {
+                    //if (owner.rbVelocityMagnitude <= owner.groundRunSpeed + 1 && owner.moveDirectionMag == 0)                    
+                    //    owner.rb.drag = 10;                                         
+                    //else                    
+                    //    owner.rb.drag = 0;
 
-                    if (owner.rbVelocityMagnitude <= owner.groundRunSpeed + 1 && owner.moveDirectionMag == 0)
-                    {
-                        owner.rb.drag = 10;
-                        //owner.rb.drag = 0;
-                    }
-                    else
-                    {
-                        owner.rb.drag = 0;
-                    }
-
+                    BaseCharacterFunctions.GroundDrag(owner);
+                }
+                
+                //Enable friction    
+                {
                     if (owner.rbVelocityMagnitude < .5f && owner.moveDirectionMag == 0 )
                     {
                         owner.phyMat.dynamicFriction = 1;
@@ -490,20 +504,21 @@ public class SymGround : Behaviour<BaseCharacterController>
         }
         else //Airborn motion
         {
-            //Angular Acceleration              
-            {
-                Vector3 axis = ((owner.transform.right * owner.verticalInput) + (-owner.transform.up * owner.horizontalInput)).normalized;
-                float input = Mathf.Clamp01(Mathf.Abs(owner.verticalInput) + Mathf.Abs(owner.horizontalInput));
-                //Make angualr gain a weighted average
-                owner.rb.AddTorque(axis * input * owner.angularAccelerationBase * owner.angularGain.x, ForceMode.Acceleration);
-            }
+            BaseCharacterFunctions.ForwardAirbornDirectionControl(owner, owner.orientationTensor, owner.targetOrientationTensor);
+            BaseCharacterFunctions.LateralAirbornDirectionControl(owner, owner.orientationTensor, owner.targetOrientationTensor);
+
+            BaseCharacterFunctions.ManualAirbornAngularAcceleration(owner,
+                owner.weightedPitchInput + owner.virtualVerticalInput * (1 - Mathf.Abs(owner.weightedPitchInput)),
+                owner.weightedRollInput + owner.virtualHorizontalInput * (1 - Mathf.Abs(owner.weightedRollInput))
+                );
+
+            BaseCharacterFunctions.AirbornDrag(owner);
         }
 
     }    
 
     public override void OnCollisionEnter(BaseCharacterController owner, Collision collision)
-    {
-        if (owner.jumpBuffer > owner.jumpBufferMax)
+    {       
         if (!owner.grounded)
         //if (Vector3.Dot(owner.surfaceNormal, -owner.gravity.normalized) > .5f)
         if (Mathf.Sign(owner.surfaceVerticalSpeed) < 1)
@@ -525,30 +540,25 @@ public class SymGround : Behaviour<BaseCharacterController>
             owner.topSpeed = Mathf.Max(owner.surfaceTraversalSpeed, owner.groundWalkSpeed);
             
         }
-        else
-        {
-            //Report if moving away from surface
-            Debug.Log("verticalSpeed > 1 in OnCollisionEnter");
-        }
 
     }
 
     public override void OnCollisionStay(BaseCharacterController owner, Collision collision)
     {
 
-        //if (!owner.grounded)
-        //    if (owner.surfaceVerticalSpeed <= 0)
-        //    {
-        //        //Character Effects       
-        //        owner.rb.angularVelocity = Vector3.zero;
-        //        owner.grounded = true;
-        //        Debug.Log("Grounded from OnCollisionStay");
-        //    }
-        //    else
-        //    {
-        //        //Report if moving away from surface (should happen during jumps)
-        //        Debug.Log("verticalSpeed > 1 in OnCollisionStay");
-        //    }
+        if (!owner.grounded)
+            if (owner.surfaceVerticalSpeed <= 0)
+            {
+                //Character Effects       
+                owner.rb.angularVelocity = Vector3.zero;
+                owner.grounded = true;
+                Debug.Log("Grounded from OnCollisionStay");
+            }
+            else
+            {
+                //Report if moving away from surface (should happen during jumps)
+                Debug.Log("verticalSpeed > 1 in OnCollisionStay");
+            }
 
     }
 
@@ -556,9 +566,8 @@ public class SymGround : Behaviour<BaseCharacterController>
     {
         owner.canRun = false;
         owner.boosting = false;
-        owner.boostTime = owner.boostDuration;
-        acceleratorTime = 0;    
-        owner.jumpBuffer = owner.jumpBufferMax;
+        owner.boostTime = 0;
+        acceleratorTime = 0;      
         owner.moveDirection = Vector3.zero;
         owner.moveDirectionRaw = Vector3.zero;
         owner.moveDirectionMag = 0;

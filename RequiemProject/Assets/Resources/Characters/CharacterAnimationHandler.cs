@@ -29,15 +29,19 @@ public class CharacterAnimationHandler : MonoBehaviour
             if (animator != null)
             {                                
                 animator.SetFloat("Speed", controller.rbVelocityMagnitude, 0.1f, Time.deltaTime);
+                animator.SetFloat("TurnScale", controller.turnScale * 10, 0.1f, Time.deltaTime);
                 animator.SetFloat("VerticalSpeed", controller.rbVelocityMagnitude * Vector3.Dot(controller.rbVelocityNormalized, -controller.gravity.normalized), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotZ", Mathf.Abs(controller.localAngularVelocity.z), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotX", Mathf.Abs(controller.localAngularVelocity.x), 0.1f, Time.deltaTime);
-                animator.SetFloat("RotY", Mathf.Abs(controller.localAngularVelocity.y), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotZMag", Mathf.Abs(controller.localAngularVelocity.z), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotXMag", Mathf.Abs(controller.localAngularVelocity.x), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotYMag", Mathf.Abs(controller.localAngularVelocity.y), 0.1f, Time.deltaTime);
+                animator.SetFloat("RotZ", controller.localAngularVelocity.z, 0.1f, Time.deltaTime);
+                animator.SetFloat("RotX", controller.localAngularVelocity.x, 0.1f, Time.deltaTime);
+                animator.SetFloat("RotY", controller.localAngularVelocity.y, 0.1f, Time.deltaTime);
                 animator.SetFloat("Drag", rb.drag / .2f, 0.3f, Time.deltaTime);
-                animator.SetFloat("DragDir", Vector3.Dot(controller.rbVelocityNormalized, -transform.forward), 0.1f, Time.deltaTime);                
+                animator.SetFloat("DragDir", Vector3.Dot(controller.rbVelocityNormalized, controller.orientationTensor.up), 0.1f, Time.deltaTime);                
                 animator.SetFloat("LandingType", controller.landingType);                
-                animator.SetFloat("GroundForwardSpeed", Mathf.Clamp(controller.rbVelocityMagnitude * Vector3.Dot(controller.rbVelocityNormalized, transform.forward), -30, 30), 0.1f, Time.deltaTime);
-                animator.SetFloat("GroundLateralSpeed", controller.rbVelocityMagnitude * -Vector3.Dot(controller.rbVelocityNormalized, transform.right), 0.1f, Time.deltaTime);
+                animator.SetFloat("ForwardSpeed", Mathf.Clamp(controller.rbVelocityMagnitude * Vector3.Dot(controller.rbVelocityNormalized, controller.orientationTensor.forward), -30, 30), 0.1f, Time.deltaTime);
+                animator.SetFloat("LateralSpeed", controller.rbVelocityMagnitude * -Vector3.Dot(controller.rbVelocityNormalized, controller.orientationTensor.right), 0.1f, Time.deltaTime);
                 animator.SetBool("Grounded", controller.grounded);
                 animator.SetBool("FlightEnabled", controller.flightEnabled);
 
@@ -46,7 +50,7 @@ public class CharacterAnimationHandler : MonoBehaviour
                 else
                     animator.SetFloat("Charge", 0, 0.1f, Time.deltaTime);
 
-                if (controller.crouching && controller.moveDirectionMag == 0)
+                if (controller.crouching)
                     animator.SetFloat("Crouch", 1, 0.1f, Time.deltaTime);
                 else
                     animator.SetFloat("Crouch", 0, 0.1f, Time.deltaTime);

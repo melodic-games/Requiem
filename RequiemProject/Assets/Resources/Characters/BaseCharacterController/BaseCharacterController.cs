@@ -29,7 +29,7 @@ public class BaseCharacterController : MonoBehaviour
     public float energyLevel = 0f;
     public bool chargingEnergy = false;
     public float angularAccelerationBase = 10;
-    public Vector2 angularGain = new Vector2(6, 4);
+   
 
     [Header("State")]
     //State
@@ -47,7 +47,6 @@ public class BaseCharacterController : MonoBehaviour
     public bool boosting = false;
     public float boostSpeed = 50;
     public float boostTime = 0;
-    public float boostDuration = .1f;
     public float boostInterupt = .05f;
     public float boostWindup = .05f;
 
@@ -83,10 +82,9 @@ public class BaseCharacterController : MonoBehaviour
     //Flight State
     public float flightAccelerationBase = 10;
     public float flightTopSpeed = 200;
-    public float drillDash = 0;
+    public float spinUp = 0;
     public float lateralAirDrag = 0;
     public float backwardsAirDrag = 0;
-    public float highEndDrag = 0;
 
     [Header("Physics")]
     //Physics   
@@ -111,10 +109,15 @@ public class BaseCharacterController : MonoBehaviour
     [Header("Input")]
     //Input
     public bool muteInput = false;
-
-    //Ground Input          
+    
     public float horizontalInput;
     public float verticalInput;
+
+    public float virtualHorizontalInput;
+    public float virtualVerticalInput;
+
+    public float weightedPitchInput;
+    public float weightedRollInput;
 
     public Vector3 moveDirection;
     public Vector3 moveDirectionRaw;
@@ -129,14 +132,13 @@ public class BaseCharacterController : MonoBehaviour
     public float jumpBuffer = Mathf.Infinity;
     public float jumpBufferMax = .5f;
 
-    // Flight Input
     public float thrustInput = 0;   
     public bool focusInput = false;
 
     [Header("IK")]
     //IK 
     public DynamicBone[] hairDynamicBones = new DynamicBone[] { null, null };
-    private DynamicBone[] bodyDynamicBones = new DynamicBone[] { null, null };
+    public DynamicBone[] bodyDynamicBones = new DynamicBone[] { null, null };
 
     public Vector3 characterLookAtPosition;
     private Vector3 lookDir;
@@ -161,7 +163,7 @@ public class BaseCharacterController : MonoBehaviour
 
         animator = GetComponentInChildren<Animator>();
         animator.applyRootMotion = false;
-        animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("Characters/Symphonic/Animation/SymphonicController 1");
+        animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("Characters/Symphonic/Animation/SymphonicController");
 
         InitilizeDynamicBone();
 
@@ -174,8 +176,6 @@ public class BaseCharacterController : MonoBehaviour
         rb.centerOfMass = new Vector3(0, playerHeight / 2, 0);
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
         rb.maxAngularVelocity = 40;
-
-        angularGain = new Vector2(6, 4);
 
         capsuleCollider = gameObject.AddComponent<CapsuleCollider>();
         capsuleCollider.radius = .25f;
@@ -212,39 +212,68 @@ public class BaseCharacterController : MonoBehaviour
         {
             controlSource.CollectInput();
 
-            //Directional Input
-            {
-                horizontalInput = controlSource.horizontalInput;
-                verticalInput = controlSource.verticalInput;
-            }
-     
-            //Crouching
-            { 
-                crouching = controlSource.crouching;
-            }
-
+            //Directional Input            
+            horizontalInput = controlSource.horizontalInput;
+            verticalInput = controlSource.verticalInput;
+                 
+            //Crouching           
+            crouching = controlSource.crouching;
+            
             //Jump
-            if (controlSource.jump)
-            {
+            if (controlSource.jump)            
                 jumpBuffer = 0;
-            }
+            
 
             //Boost    
-            if (controlSource.boost && !muteInput)
-            {
+            if (controlSource.boost && !muteInput)            
                 boostBuffer = 0;
-            }
+            
 
             //Run
-            if (controlSource.canRun)
-            {
+            if (controlSource.canRun)            
                 canRun = true;
-            }
+            
 
             thrustInput = controlSource.thrustInput;
             focusInput = controlSource.focusInput;
-        
+
+            weightedPitchInput = Mathf.Lerp(weightedPitchInput, verticalInput, Time.deltaTime * 5);
+            //weightedPitchInput = Mathf.Lerp(weightedPitchInput, verticalInput, thrustInput);
+
+            weightedRollInput = Mathf.Lerp(weightedRollInput, horizontalInput, Time.deltaTime * 5);
+            //weightedRollInput = Mathf.Lerp(weightedRollInput, horizontalInput, thrustInput);
+
+            //Reset Virtual Input
+            virtualVerticalInput = 0;
+            virtualHorizontalInput = 0;
+
         }
+
+        //Orientation 
+        if (grounded)
+        {
+
+            //Set in air orientationTensor data. Used to define what is the correct forwards and up in world space.
+            orientationTensor.forward = transform.forward;     
+            orientationTensor.right = transform.right;            
+            orientationTensor.up = transform.up;
+
+
+        }
+        else
+        {
+            //Set in air orientationTensor data. Used to define what is the correct forwards and up in world space.
+
+            //The character flies "upwards" from their walking orientation normally
+            orientationTensor.forward = transform.up;
+            //Right is still right
+            orientationTensor.right = transform.right;
+            //Making the up vector come from the characters back
+            orientationTensor.up = -transform.forward;
+        }
+
+        //Compute target tensor
+        BaseCharacterFunctions.GetTargetOrientationTensor(this, orientationTensor, out targetOrientationTensor);
 
         UpdateEffectControl();
 
@@ -256,8 +285,8 @@ public class BaseCharacterController : MonoBehaviour
         wallRun = Mathf.Min(wallRun + Mathf.InverseLerp(20, 40, rbVelocityMagnitude) * Time.deltaTime, 1);
         
         //Temp- Remove later
-       // if (thrustInput == 1 && energyLevel == 1 && !grounded && (stateMachine.currentModule.GetType() != typeof(SymFlight)))
-           // stateMachine.ChangeModule(SymFlight.Instance);
+        if (energyLevel == 1 && !grounded && (stateMachine.currentModule.GetType() != typeof(SymFlight)))
+            stateMachine.ChangeModule(SymFlight.Instance);
 
 
     }
@@ -296,7 +325,7 @@ public class BaseCharacterController : MonoBehaviour
         {
             capsuleCollider.isTrigger = false;      
             
-            if (drillDash == 1 && thrustInput == 1)
+            if (Mathf.Abs(localAngularVelocity.y) > 10 && thrustInput == 1)
             {
                 capsuleCollider.isTrigger = true;              
             }                     
@@ -323,19 +352,13 @@ public class BaseCharacterController : MonoBehaviour
 
             //Gravity Calulation    
             {
-                //reset gravity disable
-                {
-                    enableGravity = 1;
-                }
-
-                if (gravityManager != null)
-                {
-                    gravity = gravityRaw = gravityManager.ReturnGravity(transform, transform.up * playerHeight * .5f);
-                }
-                else
-                {
-                    gravity = Vector3.Lerp(gravity, Vector3.zero, Time.deltaTime);
-                }
+                //reset gravity disable                
+                enableGravity = 1;
+                
+                if (gravityManager != null)                
+                    gravity = gravityRaw = gravityManager.ReturnGravity(transform, transform.up * playerHeight * .5f);                
+                else                
+                    gravity = Vector3.Lerp(gravity, Vector3.zero, Time.deltaTime);                
             }
 
             //if we have exausted coyoteTime we are no longer grounded and should fall
@@ -351,23 +374,10 @@ public class BaseCharacterController : MonoBehaviour
 
                 //Ground check
                 {
-                    //Find the direction that we check for the ground using last frames groundNormal if wall run is enabled                
+                    //direction that we check for the ground using last frames groundNormal if wall run is enabled                
                     Vector3 groundCheckDirection = Vector3.Lerp(gravity.normalized, gravity.magnitude * -surfaceNormal, wallRun).normalized;
-
-                    //Preform raycast and grab Surface Data
-                    {
-
-                        Vector3 pos = transform.position + -groundCheckDirection * playerHeight *.5f;
-                        //Vector3 pos = transform.position + transform.up * playerHeight *.5f;
-
-                        float dist = playerHeight;                        
-
-                        groundIsBelow = Physics.Raycast(pos, groundCheckDirection, out groundHit, dist, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore);
-
-                        //Debug.DrawLine(pos, groundHit.point, Color.red);
-
-                        //Debug.DrawRay(groundHit.point, groundHit.normal, Color.blue);
-                    }
+                                                                                                            
+                    groundIsBelow = Physics.Raycast(transform.position + -groundCheckDirection * playerHeight * .5f, groundCheckDirection, out groundHit, playerHeight, ~((1 << 8) | (1 << 2) | (1 << 10)), QueryTriggerInteraction.Ignore);                    
                 }
 
                 //Check to make sure we have not left the ground             
@@ -394,59 +404,6 @@ public class BaseCharacterController : MonoBehaviour
             }
         }
 
-        //Generic Airborn Behaviour
-        if (!grounded)
-        {
-        
-            //Set in air orientationTensor. Used to define what is the correct forwards and up in world space.
-
-            //The character flies "upwards" from their walking orientation normally
-            orientationTensor.forward = transform.up;
-            //Right is still right
-            orientationTensor.right = transform.right;           
-            //Making the up vector come from the characters back
-            orientationTensor.up = -transform.forward;
-
-            SymUtility.GetTargetOrientationTensor(this, orientationTensor, out targetOrientationTensor);
-            SymUtility.ForwardAirbornControl(this, orientationTensor, targetOrientationTensor);
-            SymUtility.LateralAirbornControl(this, orientationTensor, targetOrientationTensor);
-
-            //Control Drag
-            {
-
-                {
-                    //Directional Drag along the characters flight forward vector, only using force along the negative forward axis.
-                    backwardsAirDrag = Mathf.Clamp01(Vector3.Dot(rbVelocityNormalized, -orientationTensor.forward));
-
-                    //Disable backwards drag if pitching (4 is the threshold for when the animation transions into flight curl)
-                    backwardsAirDrag *= 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.x) - 4);
-
-                    //If not thrusting disable backwards drag while rolling
-                    if (thrustInput == 0)
-                        backwardsAirDrag *= 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.y) - 5);
-                }
-
-                {
-                    //Directional Drag along the characters flight up vector, signed. Ignoring side axis drag.
-                    lateralAirDrag = Vector3.Dot(rbVelocityNormalized, orientationTensor.up);
-
-                    //Disable lateral air drag if pitching (4 is the threshold for when the animation transions into flight curl)
-                    lateralAirDrag *= 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.x) - 4);
-
-                    //Diable lateral air drag if rolling
-                    lateralAirDrag *= 1 - Mathf.Clamp01(Mathf.Abs(localAngularVelocity.y) - 5);
-                }
-
-                //Max velocity adjustment
-                highEndDrag = Mathf.Lerp(0, 10, Mathf.InverseLerp(flightTopSpeed - 20, flightTopSpeed, rbVelocityMagnitude));
-
-                //backwards + lateral + highEnd               
-                //rb.drag = Mathf.Lerp(0, 1, backwardsAirDrag) + Mathf.Lerp(0, 0.2f, Mathf.Abs(lateralAirDrag)) + highEndDrag;
-                rb.drag = Mathf.Lerp(0, 1, backwardsAirDrag) + highEndDrag;
-            }
-
-        }
-
         //Generic input muting
         { 
             muteInput = false;
@@ -465,12 +422,11 @@ public class BaseCharacterController : MonoBehaviour
             //Increment boostTime
             if (boosting)
             {
-                boostTime += Time.deltaTime;
+                boostTime = Mathf.Max(0, boostTime - Time.deltaTime);
 
                 //Reset boosting and boostTime once we have boosted the full duration
-                if (boostTime >= boostDuration)
-                {
-                    boostTime = 0;
+                if (boostTime == 0)
+                {                 
                     boosting = false;
                 }
             }
@@ -515,70 +471,69 @@ public class BaseCharacterController : MonoBehaviour
             //recalulate ground speeds relative to the collission surface now that surfaceNormal has updated
             surfaceVerticalSpeed = Vector3.Dot(rbVelocityMagnitude * rbVelocityNormalized, surfaceNormal);
             surfaceTraversalSpeed = rbVelocityMagnitude - Mathf.Abs(surfaceVerticalSpeed);
-
-            if (jumpBuffer > jumpBufferMax)
+                     
+            //Check if we should ground the character normally, or if the character should stick to walls
+            if (Vector3.Dot(surfaceNormal, -gravity.normalized) > .5f)
             {
-                //Check if we should ground the character normally, or if the character should stick to walls
-                if (Vector3.Dot(surfaceNormal, -gravity.normalized) > .5f)
-                {
-                    //Reset rotation on ground on impact                
-                    SymUtility.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity), -gravity));
-                }
+                //Reset rotation on ground on impact                
+                if (Vector3.Dot(transform.up, surfaceNormal) > 0 | Mathf.Abs(localAngularVelocity.x) > 3)
+                    BaseCharacterFunctions.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(transform.right, -gravity), -gravity));
                 else
-                {
-                    wallRun = 1;
-                    //Reset rotation on ground on impact to stick to walls                      
-                    SymUtility.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(transform.right, surfaceNormal), surfaceNormal));
-                }
-
-                //Reset Landing Type
-                landingType = 0;
-
-                //handle landing lag
-                if (Vector3.Dot(rbVelocityNormalized, surfaceNormal) < -0.85f && rbVelocityMagnitude > 40)
-                {
-                    impactLag = 1;
-                    landingType = 1;
-                    rb.velocity = Vector3.zero;
-                    Debug.Log("Hard Contact");
-                }
-                else
-                {
-                    Debug.Log("Normal Contact");
-                }
-
-
-
-                if (surfaceVerticalSpeed < -20)
-                {
-                    //CauseCameraShake(speedAlongContactNormal * .1f);
-                    SymUtility.ShockWave(collision.contacts[0].point + collision.contacts[0].normal, transform.rotation, rbVelocityMagnitude * Vector3.Dot(rbVelocityNormalized, -surfaceNormal), rb, shockwavePrefab);
-                }
-
+                    BaseCharacterFunctions.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(-transform.right, -gravity), -gravity));
             }
             else
             {
-
-                //Character Effects
-                {
-                    //Find Reflection Vector
-                    Vector3 reflect = Vector3.Reflect(rbVelocityNormalized, surfaceNormal);
-                    //Reflect Velocity
-                    rb.velocity = reflect * rbVelocityMagnitude;
-                    //Reflect Orientation
-                    Quaternion rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, rbVelocityNormalized), reflect), surfaceNormal);
-                    SymUtility.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, rotation);
-                    //Reorient the world space angular velocity to match the rotation just applied 
-                    rb.angularVelocity = transform.TransformDirection(localAngularVelocity);
-                }
-
-                if (rbVelocityMagnitude > 20)
-                {
-                    //cameraHelper.CameraBounce(collision);
-                    //impactLag = .5f;
-                }
-
+                wallRun = 1;
+                //Reset rotation on ground on impact to stick to walls                      
+                BaseCharacterFunctions.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, Quaternion.LookRotation(Vector3.Cross(-transform.right, surfaceNormal), surfaceNormal));        
             }
+
+            //Reset Landing Type
+            landingType = 0;
+
+            //handle landing lag
+            if (Vector3.Dot(rbVelocityNormalized, surfaceNormal) < -0.85f || crouching)
+            {
+                //impactLag = 1;
+                //landingType = 1;
+                rb.velocity = Vector3.zero;
+                Debug.Log("Hault at Contact");
+            }
+            else
+            {
+                Debug.Log("Normal Contact");
+            }
+
+            if (surfaceVerticalSpeed < -20)
+            {
+                //CauseCameraShake(speedAlongContactNormal * .1f);
+                BaseCharacterFunctions.ShockWave(collision.contacts[0].point + collision.contacts[0].normal, transform.rotation, rbVelocityMagnitude * Vector3.Dot(rbVelocityNormalized, -surfaceNormal), rb, shockwavePrefab);
+            }
+
+            
+            
+            //{
+
+            //    //Character Effects
+            //    {
+            //        //Find Reflection Vector
+            //        Vector3 reflect = Vector3.Reflect(rbVelocityNormalized, surfaceNormal);
+            //        //Reflect Velocity
+            //        rb.velocity = reflect * rbVelocityMagnitude;
+            //        //Reflect Orientation
+            //        Quaternion rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.Cross(reflect, rbVelocityNormalized), reflect), surfaceNormal);
+            //        BaseCharacterFunctions.SetRotationAroundOffset(transform, Vector3.up * playerHeight * .5f, rotation);
+            //        //Reorient the world space angular velocity to match the rotation just applied 
+            //        rb.angularVelocity = transform.TransformDirection(localAngularVelocity);
+            //    }
+
+            //    if (rbVelocityMagnitude > 20)
+            //    {
+            //        //cameraHelper.CameraBounce(collision);
+            //        //impactLag = .5f;
+            //    }
+
+            //}
 
             ResetBodyDynamicBones();
         }
@@ -586,9 +541,7 @@ public class BaseCharacterController : MonoBehaviour
         {
             //Run Module Specific Collission 
             stateMachine.CollissionEnter(collision);
-        }
-
-        jumpBuffer = Mathf.Infinity;
+        }      
 
     }
 
@@ -642,6 +595,7 @@ public class BaseCharacterController : MonoBehaviour
 
         foreach (DynamicBone bone in bodyDynamicBones)
         {
+            if (bone == null) return;
             bone.m_Stiffness = Mathf.Lerp(bone.m_Stiffness, stiff, Time.deltaTime * 10);
             bone.m_Elasticity = Mathf.Lerp(bone.m_Elasticity, 0.022f ,Time.deltaTime * 10);           
             bone.UpdateParameters();
@@ -654,6 +608,7 @@ public class BaseCharacterController : MonoBehaviour
 
         foreach (DynamicBone bone in hairDynamicBones)
         {
+            if (bone == null) return;
             bone.m_Stiffness = Mathf.Lerp(bone.m_Stiffness, stiff, Time.deltaTime);
             bone.UpdateParameters();
         }
@@ -665,6 +620,7 @@ public class BaseCharacterController : MonoBehaviour
     {
         foreach (DynamicBone bone in bodyDynamicBones)
         {
+            if (bone == null) return;
             bone.m_Stiffness = 1;
             bone.m_Elasticity = 1;        
             bone.UpdateParameters();
@@ -701,9 +657,9 @@ public class BaseCharacterController : MonoBehaviour
             if (chargingEnergy && energyLevel != 1)
             {
                 main.loop = true;
-                main.startLifetime = .5f;
-                main.startSpeed = -4;
-                shape.radius = 2;
+                main.startLifetime = .6f;
+                main.startSpeed = -8;
+                shape.radius = 5;
                 emission.rateOverTime = Mathf.Lerp(0, 40, 1);//33.42f;
                 if (!chargeEffectParticles.isPlaying) chargeEffectParticles.Play();
             }

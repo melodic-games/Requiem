@@ -136,7 +136,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SideTexture:
-        m_Texture: {fileID: 2800000, guid: 6344bf96fbda94141a525046d088fb23, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecularColorMap:
@@ -160,7 +160,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TopTexture:
-        m_Texture: {fileID: 2800000, guid: 6344bf96fbda94141a525046d088fb23, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7044b55de10578f45a16946441ece231, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _TransmittanceColorMap:
@@ -305,7 +305,7 @@ Material:
     - Color_CB425DF9: {r: 0.45, g: 0.45, b: 0.45, a: 0}
     - Vector2_2AC04287: {r: 0.29, g: 0.16, b: 0, a: 0}
     - _BaseColor: {r: 0.4885263, g: 0.8867924, b: 0.38065147, a: 1}
-    - _BaseColor1: {r: 0.37720037, g: 0.049889494, b: 0.645, a: 0}
+    - _BaseColor1: {r: 0.6039216, g: 0.6237254, b: 1, a: 1}
     - _BaseColor2: {r: 0, g: 0, b: 0, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0, g: 0, b: 0, a: 1}
@@ -316,7 +316,7 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
-    - _ShellColor: {r: 1.1590972, g: 0.23060569, b: 0.9888738, a: 1}
+    - _ShellColor: {r: 0.23060569, g: 0.74127626, b: 1.1590972, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _ThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
     - _TransmittanceColor: {r: 1, g: 1, b: 1, a: 1}

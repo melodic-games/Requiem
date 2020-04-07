@@ -39,6 +39,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Cubemap_BBEBD850:
+        m_Texture: {fileID: 8900000, guid: b6eae4c433f2f7f46b9e8abbf081e5d6, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - Texture2D_57DB264C:
         m_Texture: {fileID: 2800000, guid: 2f69dacce5e7d7c4aa41211395e03624, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -283,7 +287,7 @@ Material:
     - Vector2_2AC04287: {r: 0.2, g: 0, b: 0, a: 0}
     - Vector2_EBD0951F: {r: 10, g: 10, b: 0, a: 0}
     - _BaseColor: {r: 0, g: 0.14117648, b: 0.27058825, a: 1}
-    - _BaseColor1: {r: 0.735, g: 0.8740164, b: 1, a: 1}
+    - _BaseColor1: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
     - _Color: {r: 0, g: 0, b: 0, a: 29.64}
     - _Color1: {r: 0.0050264318, g: 0.0059823785, b: 0.0069999998, a: 1}
@@ -295,7 +299,7 @@ Material:
     - _EmissiveColorLDR: {r: 0, g: 0, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
-    - _ShellColor: {r: 9.082411, g: 0.7568676, b: 0, a: 1}
+    - _ShellColor: {r: 0, g: 3.1788428, b: 9.082411, a: 1}
     - _SpecularColor: {r: 1, g: 1, b: 1, a: 1}
     - _ThicknessRemap: {r: 0, g: 1, b: 0, a: 0}
     - _TransmittanceColor: {r: 1, g: 1, b: 1, a: 1}

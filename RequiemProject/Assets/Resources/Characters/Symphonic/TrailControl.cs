@@ -35,9 +35,9 @@ public class TrailControl : MonoBehaviour
             
             trailTime = Mathf.InverseLerp(controller.groundRunSpeed, controller.groundRunSpeed + 50 - controller.groundRunSpeed, controller.rbVelocityMagnitude);
 
-            if (controller.controlSource.thrustInput != 1)
+            if (controller.controlSource.thrustInput != 1 && !controller.boosting)
             {
-                trailTime *= Mathf.InverseLerp(10, 0, Mathf.Abs(controller.localAngularVelocity.y));
+                trailTime *= Mathf.InverseLerp(5, 0, Mathf.Abs(controller.localAngularVelocity.y));
                 trailTime *= Mathf.InverseLerp(4, 0, Mathf.Abs(controller.localAngularVelocity.x));
             }
 
